@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - 8000:8000
+    environment:
+      DATABASE_URL: ""
+      POSTGRES_DB: tasksmanager
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_pwd
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/code/app
+  db:
+    image: postgres:latest
+    restart: always
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: tasksmanager
+      POSTGRES_PASSWORD: postgres_pwd
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tasksmanager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  postgres_data:
