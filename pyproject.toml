@@ -14,8 +14,23 @@ dependencies = [
     "sqlmodel>=0.0.39",
     "uvicorn>=0.51.0",
     "psycopg2-binary>=2.9.12",
+    "alembic>=1.18.5",
 ]
 
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "httpx>=0.28.1",
+    "pip>=26.1.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.0",
+]
+
+[tool.pytest]
+addopts = ["-ra", "-q"]
+log_level = "DEBUG"
