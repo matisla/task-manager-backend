@@ -1,12 +1,13 @@
-from enum import Enum
+from enum import StrEnum
 
+from auth.settings import AuthSettings
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from auth.settings import AuthSettings
+from .logging import LoggingSettings
 
 
-class Environment(Enum):
+class Environment(StrEnum):
     DEV = "development"
     PROD = "production"
     TEST = "test"
@@ -61,6 +62,7 @@ class Settings(BaseSettings):
     # Authentication settings
     auth: AuthSettings = AuthSettings()
     db: PostgreSQLSettings = PostgreSQLSettings()
+    log: LoggingSettings = LoggingSettings()
 
     SettingsConfigDict(
         env_prefix="POSTGRES_",

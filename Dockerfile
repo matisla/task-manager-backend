@@ -16,5 +16,4 @@ EXPOSE 8000
 
 WORKDIR /code/app
 
-# CMD ["uvicorn", "asgi:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-CMD ["python", "main.py"]
+CMD ["uvicorn", "asgi:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
