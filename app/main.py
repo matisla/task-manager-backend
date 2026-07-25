@@ -1,14 +1,12 @@
-import uvicorn
-
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
+import uvicorn
 from auth.router import auth_router, user_router
-
-from config import settings, Environment
-from config.database import set_engine, ENGINE
+from config import Environment, settings
 from config.cors import set_cors
+from config.database import ENGINE, set_engine
+from core.router import router as core_router
+from fastapi import FastAPI
 
 
 @asynccontextmanager
@@ -44,7 +42,7 @@ def create_app() -> FastAPI:
     set_cors(fast_app)
     set_engine(settings.db.connexion_url)
 
-    print("hello")
+    settings.log.configure()
 
     return fast_app
 
