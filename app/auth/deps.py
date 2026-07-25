@@ -1,14 +1,12 @@
 from typing import Annotated
 
+from config.database import SessionDep
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import select
 
-from .security import decode_token
 from .models import User
-
-from config.database import SessionDep
-
+from .security import decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -46,13 +44,13 @@ async def get_current_user(
     if payload.get("type") != "access":
         raise credentials_exception
 
-    # get the username for subject
-    username: str | None = payload.get("sub")
-    if username is None:
+    # get the user_id for subject
+    user_id: str | None = payload.get("sub")
+    if user_id is None:
         raise credentials_exception
 
     # get the user from the database
-    user = User.get_by_username(session, username)
+    user = session.get(User, user_id)
 
     if user is None:
         raise credentials_exception

@@ -1,6 +1,7 @@
+import uuid
 from datetime import datetime
 
-from sqlmodel import SQLModel, Field, Session, select
+from sqlmodel import Field, Session, SQLModel, select
 
 
 class User(SQLModel, table=True):
@@ -8,7 +9,7 @@ class User(SQLModel, table=True):
     User model for the database
     """
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     firstname: str = Field(max_length=64)
     lastname: str = Field(max_length=64)
     username: str = Field(index=True, max_length=64)

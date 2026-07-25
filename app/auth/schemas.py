@@ -1,6 +1,7 @@
+import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -8,11 +9,11 @@ class UserCreate(BaseModel):
     Schema for creating a new user
     """
 
-    username: str = Field(min_length=3, max_length=63, example="johndoe")
-    firstname: str = Field(min_length=1, max_length=64, example="John")
-    lastname: str = Field(min_length=1, max_length=64, example="Doe")
-    email: EmailStr = Field(example="johndoe@example.com")
-    password: str = Field(min_length=8, example="SecuredPassword_123!")
+    username: str = Field(min_length=3, max_length=63, examples=["johndoe"])
+    firstname: str = Field(min_length=1, max_length=64, examples=["John"])
+    lastname: str = Field(min_length=1, max_length=64, examples=["Doe"])
+    email: EmailStr = Field(examples=["johndoe@example.com"])
+    password: str = Field(min_length=8, examples=["SecuredPassword_123!"])
 
 
 class UserLogin(BaseModel):
@@ -25,7 +26,7 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     username: str
     firstname: str
     lastname: str

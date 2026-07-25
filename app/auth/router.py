@@ -1,25 +1,15 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import select
-
 from config import settings
 from config.database import SessionDep
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 
-from .models import User
-from .security import (
-    verify_password,
-    get_password_hash,
-    create_token,
-    decode_token,
-)
-
-
-from .schemas import Token, UserResponse
 from .deps import get_current_user
-
+from .models import User
+from .schemas import Token, UserResponse
+from .security import create_token, decode_token, verify_password
 
 auth_router = APIRouter()
 
@@ -43,12 +33,12 @@ async def login(
         )
 
     access_token = create_token(
-        subject=user.username,
+        subject=str(user.id),
         expires_delta=timedelta(minutes=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES),
         token_type="access",
     )
     refresh_token = create_token(
-        subject=user.username,
+        subject=str(user.id),
         expires_delta=timedelta(days=settings.auth.REFRESH_TOKEN_EXPIRE_DAYS),
         token_type="refresh",
     )
@@ -67,15 +57,15 @@ async def refresh_token(refresh_token: str):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token invalide"
         )
 
-    username: str = payload.get("sub", "")
+    user_id: str = payload.get("sub", "")
 
     new_access_token = create_token(
-        subject=username,
+        subject=user_id,
         expires_delta=timedelta(minutes=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES),
         token_type="access",
     )
     new_refresh_token = create_token(
-        subject=username,
+        subject=user_id,
         expires_delta=timedelta(days=settings.auth.REFRESH_TOKEN_EXPIRE_DAYS),
         token_type="refresh",
     )
@@ -93,7 +83,7 @@ async def subscribe(*args, **kwargs):
 user_router = APIRouter()
 
 
-@user_router.get("/profile", response_model=UserResponse)
+@user_router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: Annotated[dict, Depends(get_current_user)]):
     """
     Route protégée : nécessite un Bearer Access Token valide.
