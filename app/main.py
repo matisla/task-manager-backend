@@ -4,7 +4,7 @@ import uvicorn
 from auth.router import auth_router, user_router
 from config import Environment, settings
 from config.cors import set_cors
-from config.database import ENGINE, set_engine
+from config.database import ENGINE
 from core.router import router as core_router
 from fastapi import FastAPI
 
@@ -14,8 +14,6 @@ async def lifespan(app: FastAPI):
     """
     Context for live cycle of the app
     """
-
-    set_engine(settings.db.connexion_url)
 
     yield
 
@@ -40,9 +38,9 @@ def create_app() -> FastAPI:
     fast_app.include_router(user_router, prefix="/users", tags=["Users"])
 
     set_cors(fast_app)
-    set_engine(settings.db.connexion_url)
 
     settings.log.configure()
+    settings.db.set_engine(settings.DEBUG)
 
     return fast_app
 

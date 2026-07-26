@@ -6,9 +6,10 @@ services:
       - 8000:8000
     environment:
       DATABASE_URL: ""
-      POSTGRES_DB: tasksmanager
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_pwd
+      DATABASE_TYPE: postgresql
+      DATABASE_NAME: tasksmanager
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres_pwd
       LOG_LEVEL: DEBUG
     depends_on:
       db:

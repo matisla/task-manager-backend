@@ -16,6 +16,7 @@ dependencies = [
     "psycopg2-binary>=2.9.12",
     "alembic>=1.18.5",
     "pyyaml>=6.0.3",
+    "python-dotenv>=1.2.2",
 ]
 
 [tool.pyright]
@@ -23,15 +24,15 @@ venv = ".venv"
 venvPath = "."
 
 [dependency-groups]
-dev = [
-    "black>=26.5.1",
-    "httpx>=0.28.1",
-    "pip>=26.1.2",
+dev = ["black>=26.5.1", "pip>=26.1.2", "ruff>=0.16.0"]
+test = [
     "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.16.0",
+    "httpx2>=2.9.1",
 ]
 
 [tool.pytest]
+pythonpath = ["app"]
 addopts = ["-ra", "-q"]
 log_level = "DEBUG"
