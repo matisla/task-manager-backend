@@ -20,19 +20,28 @@ class User(SQLModel, table=True):
     is_superuser: bool = Field(default=False)
 
     @classmethod
-    def get_by_username(cls, session: Session, username: str) -> "User | None":
+    def get_by(cls, session: Session, attribute: str, value: str) -> "User | None":
         """
-        Get the user by his username
+        Get the user by an attribute
 
         Args:
             session (Session): session used to access the database
-            username (str): username to use to select the User
+            attribute (str): attribute to use to select the User
+            username (str): value to use to select the User
 
         Returns:
             User | None: the User object or None if not found.
         """
 
-        statement = select(User).where(User.username == username)
-        user: User | None = session.exec(statement).first()
+        statement = None
 
+        match attribute:
+            case "username":
+                statement = select(User).where(User.username == value)
+            case "email":
+                statement = select(User).where(User.email == value)
+            case _:
+                raise AttributeError("attribute shall be 'username' or 'email'")
+
+        user: User | None = session.exec(statement).first()
         return user
