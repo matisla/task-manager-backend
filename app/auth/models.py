@@ -20,7 +20,7 @@ class User(SQLModel, table=True):
     is_superuser: bool = Field(default=False)
 
     @classmethod
-    def get_by(cls, session: Session, attribute: str, value: str) -> "User | None":
+    def get_by(cls, session: Session, attribute: str, value: str) -> User | None:
         """
         Get the user by an attribute
 

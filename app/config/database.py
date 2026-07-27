@@ -1,3 +1,4 @@
+import logging
 from enum import StrEnum
 from typing import Annotated
 
@@ -6,6 +7,8 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
+
+logger = logging.getLogger(__name__)
 
 ENGINE: Engine | None = None
 
@@ -32,10 +35,8 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="DATABASE_",
-        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
-        case_sensitive=True,
     )
 
     @property
@@ -56,27 +57,6 @@ class DatabaseSettings(BaseSettings):
 
         return f"{self.TYPE}://{self.USER}:{self.PASSWORD}@{self.SERVER}:{self.PORT}/{self.NAME}"
 
-    def set_engine(self, debug: bool = False) -> Engine:
-        """
-        Create the engine based on the given url.
-
-        Args:
-            url (str): connexion URL for the database
-            debug (bool): if debug echo mode will be activated
-
-        Return:
-            (Engine): the created engine
-        """
-        global ENGINE
-
-        ENGINE = create_engine(
-            self.connexion_url,
-            echo=debug,
-            connect_args={},
-        )
-
-        return ENGINE
-
 
 def init_db():
     """create all tables for database"""
@@ -85,6 +65,25 @@ def init_db():
         raise ValueError("Database engine not initialized")
 
     SQLModel.metadata.create_all(ENGINE)
+
+
+def set_engine(url: str, debug: bool = False) -> Engine:
+    """
+    Create the engine based on the given url.
+
+    Args:
+        url (str): connexion URL for the database
+        debug (bool): if debug echo mode will be activated
+
+    Return:
+        (Engine): the created engine
+    """
+    global ENGINE
+
+    logger.debug("Creating the database engine")
+    ENGINE = create_engine(url, echo=debug, connect_args={})
+
+    return ENGINE
 
 
 def get_session():

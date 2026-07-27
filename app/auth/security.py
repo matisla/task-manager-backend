@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
 
 import jwt
+from config import get_settings
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
-
-from config import settings
-
 
 # Robust hashing with Argon2
 password_hash = PasswordHash((Argon2Hasher(),))
@@ -58,7 +55,8 @@ def create_token(
         str: the encoded token
     """
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
+    settings = get_settings()
 
     expire = now + expires_delta
     payload = {"sub": str(subject), "exp": expire, "iat": now, "type": token_type}
@@ -70,7 +68,7 @@ def create_token(
     )
 
 
-def decode_token(token: str) -> Optional[dict[str, Any]]:
+def decode_token(token: str) -> dict[str, str] | None:
     """
     Decode a token
 
@@ -78,7 +76,7 @@ def decode_token(token: str) -> Optional[dict[str, Any]]:
         token (str): token to decode
 
     Return:
-        dict[str, Any] | None: return the payload decoded or None if failed.
+        dict[str, str] | None: return the payload decoded or None if failed.
     """
     try:
         payload = jwt.decode(

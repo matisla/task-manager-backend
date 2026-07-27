@@ -20,8 +20,6 @@ class AuthSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="AUTH_",
-        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
-        case_sensitive=True,
     )

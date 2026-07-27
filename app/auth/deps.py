@@ -3,7 +3,6 @@ from typing import Annotated
 from config.database import SessionDep
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import select
 
 from .models import User
 from .security import decode_token

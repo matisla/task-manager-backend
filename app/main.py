@@ -1,46 +1,38 @@
-from contextlib import asynccontextmanager
+import logging
+from pathlib import Path
 
 import uvicorn
 from auth.router import auth_router, user_router
-from config import Environment, settings
+from config import Environment, load_settings
 from config.cors import set_cors
-from config.database import ENGINE
+from config.database import set_engine
 from core.router import router as core_router
 from fastapi import FastAPI
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Context for live cycle of the app
-    """
-
-    yield
-
-    if ENGINE is not None:
-        ENGINE.dispose()
+logger = logging.getLogger(__name__)
 
 
-def create_app() -> FastAPI:
+def create_app(env_path: str | Path | None = None) -> FastAPI:
     """
     Create app instance for the application
     """
+
+    settings = load_settings(env_path)
+
+    set_engine(settings.db.connexion_url, settings.DEBUG)
 
     fast_app = FastAPI(
         title=settings.PROJECT_NAME,
         debug=settings.DEBUG,
         docs_url="/docs" if settings.ENVIRONMENT == Environment.DEV else None,
         redoc_url="/redoc" if settings.ENVIRONMENT == Environment.DEV else None,
-        lifespan=lifespan,
     )
 
     fast_app.include_router(auth_router, prefix="/auth", tags=["Auth"])
     fast_app.include_router(user_router, prefix="/users", tags=["Users"])
+    fast_app.include_router(core_router, tags=["Core"])
 
     set_cors(fast_app)
-
-    settings.log.configure()
-    settings.db.set_engine(settings.DEBUG)
 
     return fast_app
 

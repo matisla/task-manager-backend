@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from config import settings
+from config import get_settings
 from config.database import SessionDep
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -23,6 +23,7 @@ async def login(
     Endpoint compatible OpenAPI / Swagger UI.
     """
 
+    settings = get_settings()
     user = User.get_by(session, "username", form_data.username)
 
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -51,6 +52,8 @@ async def refresh_token(refresh_token: str):
     """
     Renouvelle l'Access Token à partir d'un Refresh Token valide.
     """
+    settings = get_settings()
+
     payload = decode_token(refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(

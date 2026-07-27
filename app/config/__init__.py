@@ -1,4 +1,7 @@
-from config.settings import settings, Environment
+from config.core import Environment, get_settings, load_settings
 
-
-__all__ = ["settings", "Environment"]
+__all__ = [
+    "Environment",
+    "get_settings",
+    "load_settings",
+]
