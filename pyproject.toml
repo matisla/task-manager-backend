@@ -34,5 +34,5 @@ test = [
 
 [tool.pytest]
 pythonpath = ["app"]
-addopts = ["-ra", "-vv", "--cov=app", "--cov-report=html"]
+addopts = ["-ras", "-vv", "--cov=app", "--cov-report=html"]
 log_level = "DEBUG"

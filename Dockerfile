@@ -11,6 +11,7 @@ RUN python -m pip install --root-user-action ignore --upgrade pip
 RUN pip install --root-user-action ignore --no-cache-dir --upgrade -r requirements.txt
 
 COPY ./app ./
+COPY ./env/logging.yaml ./
 
 EXPOSE 8000
 
