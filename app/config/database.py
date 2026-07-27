@@ -1,12 +1,9 @@
 import logging
 from enum import StrEnum
-from typing import Annotated
 
-from fastapi import Depends
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, SQLModel, create_engine
 
 logger = logging.getLogger(__name__)
 
@@ -56,44 +53,3 @@ class DatabaseSettings(BaseSettings):
             return f"sqlite://{self.FILENAME}"
 
         return f"{self.TYPE}://{self.USER}:{self.PASSWORD}@{self.SERVER}:{self.PORT}/{self.NAME}"
-
-
-def init_db():
-    """create all tables for database"""
-
-    if ENGINE is None:
-        raise ValueError("Database engine not initialized")
-
-    SQLModel.metadata.create_all(ENGINE)
-
-
-def set_engine(url: str, debug: bool = False) -> Engine:
-    """
-    Create the engine based on the given url.
-
-    Args:
-        url (str): connexion URL for the database
-        debug (bool): if debug echo mode will be activated
-
-    Return:
-        (Engine): the created engine
-    """
-    global ENGINE
-
-    logger.debug("Creating the database engine")
-    ENGINE = create_engine(url, echo=debug, connect_args={})
-
-    return ENGINE
-
-
-def get_session():
-    """Session generator"""
-
-    if ENGINE is None:
-        raise ValueError("Database engine not initialized")
-
-    with Session(ENGINE) as session:
-        yield session
-
-
-SessionDep = Annotated[Session, Depends(get_session)]

@@ -10,8 +10,8 @@ class User(SQLModel, table=True):
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    firstname: str = Field(max_length=64)
-    lastname: str = Field(max_length=64)
+    firstname: str | None = Field(max_length=64, default=None)
+    lastname: str | None = Field(max_length=64, default=None)
     username: str = Field(index=True, max_length=64)
     email: str = Field(unique=True, max_length=255)
     hashed_password: str = Field(max_length=255)

@@ -5,7 +5,6 @@ import uvicorn
 from auth.router import auth_router, user_router
 from config import Environment, load_settings
 from config.cors import set_cors
-from config.database import set_engine
 from core.router import router as core_router
 from fastapi import FastAPI
 
@@ -18,8 +17,6 @@ def create_app(env_path: str | Path | None = None) -> FastAPI:
     """
 
     settings = load_settings(env_path)
-
-    set_engine(settings.db.connexion_url, settings.DEBUG)
 
     fast_app = FastAPI(
         title=settings.PROJECT_NAME,

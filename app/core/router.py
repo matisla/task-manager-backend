@@ -1,6 +1,6 @@
 import logging
 
-from config.database import SessionDep
+from database import SessionDep
 from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)

@@ -10,8 +10,8 @@ class UserCreate(BaseModel):
     """
 
     username: str = Field(min_length=3, max_length=63, examples=["johndoe"])
-    firstname: str = Field(min_length=1, max_length=64, examples=["John"])
-    lastname: str = Field(min_length=1, max_length=64, examples=["Doe"])
+    firstname: str | None = Field(min_length=1, max_length=64, examples=["John"])
+    lastname: str | None = Field(min_length=1, max_length=64, examples=["Doe"])
     email: EmailStr = Field(examples=["johndoe@example.com"])
     password: str = Field(min_length=8, examples=["SecuredPassword_123!"])
 
