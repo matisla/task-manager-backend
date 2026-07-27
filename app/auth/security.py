@@ -78,6 +78,8 @@ def decode_token(token: str) -> dict[str, str] | None:
     Return:
         dict[str, str] | None: return the payload decoded or None if failed.
     """
+    settings = get_settings()
+
     try:
         payload = jwt.decode(
             token,

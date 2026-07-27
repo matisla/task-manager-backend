@@ -3,10 +3,10 @@ from typing import Annotated
 
 from config import get_settings
 from database import SessionDep
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .deps import get_current_user
+from .deps import currentUserDep
 from .models import User
 from .schemas import Token, UserCreate, UserResponse
 from .security import create_token, decode_token, get_password_hash, verify_password
@@ -76,9 +76,13 @@ async def refresh_token(refresh_token: str):
     return Token(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
-@auth_router.post("/register", status_code=status.HTTP_201_CREATED)
+@auth_router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UserResponse,
+)
 async def register(
-    user_form: UserCreate,
+    user_form: Annotated[UserCreate, Form()],
     session: SessionDep,
 ):
     """
@@ -119,7 +123,7 @@ user_router = APIRouter()
 
 
 @user_router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user: Annotated[dict, Depends(get_current_user)]):
+async def read_users_me(current_user: currentUserDep):
     """
     Route protégée : nécessite un Bearer Access Token valide.
     """

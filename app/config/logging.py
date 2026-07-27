@@ -7,8 +7,6 @@ import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-logger = logging.getLogger(__name__)
-
 
 class LogLevel(IntEnum):
     DEBUG = logging.DEBUG
@@ -51,4 +49,4 @@ class LoggingSettings(BaseSettings):
 
         root_logger = logging.getLogger()
         root_logger.setLevel(self.LEVEL)
-        root_logger.info(f"Logging level: {self.LEVEL}")
+        root_logger.debug(f"Logging level set to {self.LEVEL}")

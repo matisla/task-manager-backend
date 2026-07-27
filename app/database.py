@@ -8,8 +8,6 @@ from fastapi import Depends
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-logger = logging.getLogger(__name__)
-
 
 @cache
 def get_engine() -> Engine:
@@ -22,6 +20,7 @@ def get_engine() -> Engine:
     """
 
     settings = get_settings()
+    logger = logging.getLogger(__name__)
 
     logger.debug(f"Creating the {settings.db.TYPE} database engine.")
 
@@ -31,9 +30,13 @@ def get_engine() -> Engine:
 
     engine = create_engine(
         settings.db.connexion_url,
-        echo=settings.ENVIRONMENT != Environment.PROD,
+        echo=settings.db.ECHO,
         connect_args=connect_args,
     )
+
+    if settings.ENVIRONMENT == Environment.TEST:
+        logger.debug(f"Database URL:{settings.db.connexion_url}.")
+        SQLModel.metadata.create_all(engine, checkfirst=True)
 
     return engine
 
@@ -52,6 +55,7 @@ def init_db():
 
     engine = get_engine()
 
+    logger = logging.getLogger(__name__)
     logger.debug("Initialize Database")
 
     SQLModel.metadata.create_all(engine)

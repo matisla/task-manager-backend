@@ -13,7 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: SessionDep,
-):
+) -> User:
     """
     Acquire current user based on the token provided in the header.
     Expect "Authorization: Bearer <token>"
@@ -58,3 +58,6 @@ async def get_current_user(
         raise HTTPException(status_code=400, detail="User deactivated")
 
     return user
+
+
+currentUserDep = Annotated[User, Depends(get_current_user)]

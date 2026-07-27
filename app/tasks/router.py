@@ -13,7 +13,7 @@ from .schemas import TaskCreate, TaskRead
 router = APIRouter()
 
 
-@router.get("/tasks", response_model=TaskRead)
+@router.get("", response_model=list[TaskRead])
 async def list_tasks(user: currentUserDep, session: SessionDep):
     """
     Endpoint compatible OpenAPI / Swagger UI.
@@ -21,13 +21,13 @@ async def list_tasks(user: currentUserDep, session: SessionDep):
     """
 
     statement = select(Task).where(Task.user_id == user.id)
-    tasks = session.exec(statement)
+    tasks = session.exec(statement).all()
 
     return tasks
 
 
 @router.post(
-    "/tasks",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=TaskRead,
 )
@@ -61,8 +61,26 @@ async def create_task(
     return db_task
 
 
+@router.get(
+    "/{task_id}",
+    response_model=TaskRead,
+)
+async def detail_task(task_id, user: currentUserDep, session: SessionDep):
+    """
+    Endpoint compatible OpenAPI / Swagger UI.
+    Get detail of a task
+    """
+
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Try to get task: {task_id}")
+
+    task = session.get(Task, task_id)
+
+    return task
+
+
 @router.delete(
-    "/tasks/{task_id}",
+    "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_task(task_id, user: currentUserDep, session: SessionDep):

@@ -28,6 +28,7 @@ class DatabaseSettings(BaseSettings):
     NAME: str = Field(default="postgres")
     FILENAME: str = Field(default="")
 
+    ECHO: bool = Field(default=False)
     URL: str | None = None
 
     model_config = SettingsConfigDict(

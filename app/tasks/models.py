@@ -47,8 +47,5 @@ class Task(SQLModel, table=True):
     parent_id: uuid.UUID | None = Field(default=None, foreign_key="task.id")
 
     # Autojointure for sub-tasks (Parent / Child)
-    parent: Task | None = Relationship(
-        back_populates="children", sa_relationship_kwargs={"remote_side": "Task.id"}
-    )
-    children: list[Task] = Relationship(back_populates="parent")
+    parent: Task | None = Relationship(back_populates="children")
     user: User = Relationship(back_populates="tasks")

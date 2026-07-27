@@ -7,8 +7,7 @@ from config import Environment, load_settings
 from config.cors import set_cors
 from core.router import router as core_router
 from fastapi import FastAPI
-
-logger = logging.getLogger(__name__)
+from tasks.router import router as tasks_router
 
 
 def create_app(env_path: str | Path | None = None) -> FastAPI:
@@ -17,6 +16,7 @@ def create_app(env_path: str | Path | None = None) -> FastAPI:
     """
 
     settings = load_settings(env_path)
+    logger = logging.getLogger(__name__)
 
     fast_app = FastAPI(
         title=settings.PROJECT_NAME,
@@ -27,9 +27,12 @@ def create_app(env_path: str | Path | None = None) -> FastAPI:
 
     fast_app.include_router(auth_router, prefix="/auth", tags=["Auth"])
     fast_app.include_router(user_router, prefix="/users", tags=["Users"])
+    fast_app.include_router(tasks_router, prefix="/tasks", tags=["Tasks"])
     fast_app.include_router(core_router, tags=["Core"])
 
     set_cors(fast_app)
+
+    logger.debug("FastAPI ready")
 
     return fast_app
 
