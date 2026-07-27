@@ -1,4 +1,5 @@
-disable_existing_loggers: False
+version: 1
+disable_existing_loggers: false
 
 formatters: 
     default: 
@@ -42,7 +43,7 @@ loggers:
     uvicorn:
         handlers: [uvicorn]
         level: INFO
-        propagate: False
+        propagate: false
 
     uvicorn.error:
         level: INFO
@@ -50,8 +51,8 @@ loggers:
     uvicorn.access:
         handlers: [access]
         level: INFO
-        propagate: False
+        propagate: false
 
 root: 
     handlers: [console]
-    propagate: True
+    propagate: true

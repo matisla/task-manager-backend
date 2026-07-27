@@ -1,0 +1,19 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+    default:
+        format: "%(asctime)s | %(levelname)-8s | %(filename)s - %(message)s"
+        formatTime: "%Y-%m-%d %H:%M:%S"
+
+handlers:
+    console:
+        class: logging.StreamHandler
+        formatter: default
+        stream: ext://sys.stdout
+    file:
+        class: logging.FileHandler
+        formatter: default
+        filename: tests/debug.log
+root:
+    handlers: ["console", "file"]
