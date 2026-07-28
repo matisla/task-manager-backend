@@ -1,7 +1,11 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlmodel import Field, Session, SQLModel, select
+from sqlmodel import Field, Relationship, Session, SQLModel, select
+
+if TYPE_CHECKING:
+    from tasks.models import Task
 
 
 class User(SQLModel, table=True):
@@ -18,6 +22,8 @@ class User(SQLModel, table=True):
     created_at: datetime | None = None
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
+
+    tasks: list["Task"] = Relationship(back_populates="user")
 
     @classmethod
     def get_by(cls, session: Session, attribute: str, value: str) -> User | None:
