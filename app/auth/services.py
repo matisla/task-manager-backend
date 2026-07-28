@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from .models import User
-from .schemas import Token, UserCreate, UserResponse
+from .schemas import Token, UserCreate
 from .security import create_token, decode_token, get_password_hash, verify_password
 
 

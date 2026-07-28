@@ -19,7 +19,7 @@ class TaskCreate(TaskBase):
 class TaskRead(TaskBase):
     id: uuid.UUID
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None
 
     start_date: datetime | None
     due_date: datetime | None
