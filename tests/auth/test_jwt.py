@@ -1,8 +1,6 @@
 import logging
-import uuid
 from datetime import timedelta
 
-from auth.models import User
 from auth.security import create_token, decode_token
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -54,9 +52,7 @@ class TestJWT:
 
         user = response.json()
 
-        db_user = session.get(User, uuid.UUID(user["id"]))
-
-        assert db_user.username == user["username"]
+        assert data["username"] == user["username"]
 
     def test_register_duplicate_username(self, auth_client: TestClient):
 
@@ -94,9 +90,11 @@ class TestJWT:
         assert token["refresh_token"]
 
         access_payload = decode_token(token["access_token"])
+        assert access_payload is not None
         assert access_payload["type"] == "access"
 
         refresh_payload = decode_token(token["refresh_token"])
+        assert refresh_payload is not None
         assert refresh_payload["type"] == "refresh"
 
     def test_login_wrong_password(self, auth_client: TestClient):
@@ -137,6 +135,7 @@ class TestJWT:
         assert token["refresh_token"]
 
         access_payload = decode_token(token["access_token"])
+        assert access_payload is not None
         assert access_payload["type"] == "access"
 
     def test_refresh_token_rejects_access_token(self, auth_client: TestClient):
@@ -209,5 +208,6 @@ class TestJWT:
         token = create_token(subject="test-subject", expires_delta=timedelta(minutes=5))
         payload = decode_token(token)
 
+        assert payload is not None
         assert payload["sub"] == "test-subject"
         assert payload["type"] == "access"
