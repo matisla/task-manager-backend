@@ -21,6 +21,7 @@ afin d'apprendre à développer des projets future sur cette même base techniqu
 - Serveur ASGI: Uvicorn
 - Gestion des dépendances: uv
 - Base de données: SQLite pour les tests, PostreSQL pour l'environement de dev et en production.
+- Alembic: pour les migrations
 - ORM / Driver: SQLModel
 - Validation: Pydantic
 - Gestion des paramètres: Pydantic settings
@@ -29,6 +30,10 @@ afin d'apprendre à développer des projets future sur cette même base techniqu
 
 ## Structure du projet
 
+- Pour chaque domaine fonctionnel on crée un dossier dans `app/` (placeholder: <feature>).
+- Les fichiers seront créé uniquement si necessaire (schemas.py, models.py, etc.)
+- Il existe en supplément les dossiers `config` pour la configuration.
+
 ```
 app/
 |---- <feature>          # separation for entities: auth, tasks, etc. 
@@ -36,23 +41,28 @@ app/
       |---- schemas.py
       |---- models.py
       |---- router.py
-      |---- service.py
+      |---- services.py
+      |---- ...
 |---- config # 
       |---- __init__.py
       |---- core.py      # main Settings class
       |---- logging.py   # schemas and config for logging
       |---- database.py  # schemas and config for database 
+      |---- ...
 |---- __init__.py
 |---- database.py   # generator for session and engine
 |---- main.py       # app builder
 |---- asgi.py       # entrypoint for uvicorn
-|---- logging.yaml  # logging configuration for logging module
 tests/
 |---- <feature>     # contains tests for app/<feature>
+|---- ...           # contains conftest.py and more
+
 scripts/            # contains scripts if needed
 Dockerfile          # used to build app into container
 docker-compose.yaml # docker environment to start app in dev mode
 pyproject.yaml      # project file used via uv
+logging.yaml        # logging configuration for logging module
+.env                # env configuration for app container used in development (not commited)
 ```
 
 ## Commandes Courantes
@@ -61,11 +71,14 @@ pyproject.yaml      # project file used via uv
 # install dependancies
 uv add PACKAGE
 
-# instaler les dependances pour le développement ou les tests
+# installer les dependances pour le développement ou les tests
 uv add --dev PACKAGE
 
+# lancer un outil
+uvx <tool> ...
+
 # lancer les tests
-uvx pytest ...
+uv run pytest ...
 
 # interaction avec l'application en dev, pour les logs etc.
 docker compose ...
