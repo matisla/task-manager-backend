@@ -2,10 +2,11 @@ import logging
 import uuid
 
 from auth.models import User
-from factories import TaskFactory
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 from tasks.models import Task
+
+from .factories import TaskFactory
 
 
 class TestTask:

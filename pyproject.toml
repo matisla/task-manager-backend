@@ -22,6 +22,7 @@ dependencies = [
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
+extraPaths = ["app"]
 
 [dependency-groups]
 dev = ["black>=26.5.1", "pip>=26.1.2", "ruff>=0.16.0"]
@@ -31,6 +32,7 @@ test = [
     "pytest-asyncio>=1.4.0",
     "httpx2>=2.9.1",
     "factory-boy>=3.3.3",
+    "faker>=40.36.0",
 ]
 
 [tool.pytest]

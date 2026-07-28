@@ -9,6 +9,8 @@ from database import get_session
 from fastapi.testclient import TestClient
 from main import create_app
 
+from .auth.factories import UserFactory
+
 
 @pytest.fixture(scope="session")
 def session():
@@ -19,7 +21,7 @@ def session():
 def override_get_current_user() -> User:
     """Same fake user across requests, so ownership (eg. user_id) stays consistent."""
 
-    return User(username="johndoe", email="johndoe@example.fr", hashed_password="fake")
+    return UserFactory.build()
 
 
 @pytest.fixture(scope="session")
@@ -37,5 +39,20 @@ def client():
 
     logger = logging.getLogger(__name__)
     logger.debug("Client is ready")
+
+    return TestClient(app)
+
+
+@pytest.fixture(scope="session")
+def auth_client():
+    """
+    Client without the authentication override, used to test the real JWT flow
+    (login, refresh, and token verification on protected routes).
+    """
+
+    app = create_app(env_path=Path("tests/.env"))
+
+    logger = logging.getLogger(__name__)
+    logger.debug("Auth client is ready")
 
     return TestClient(app)
