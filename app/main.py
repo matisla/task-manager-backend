@@ -12,7 +12,13 @@ from tasks.router import router as tasks_router
 
 def create_app(env_path: str | Path | None = None) -> FastAPI:
     """
-    Create app instance for the application
+    Create app instance for the application.
+
+    Args:
+        env_path (str | Path | None): if provided, load this specific env file, else use the default parameters.
+
+    Returns:
+        FastAPI: the configured application instance.
     """
 
     settings = load_settings(env_path)

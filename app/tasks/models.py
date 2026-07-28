@@ -8,6 +8,10 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class Status(str, Enum):
+    """
+    Lifecycle status of a task.
+    """
+
     BACKLOG = "backlog"  # not fully defined
     PAUSED = "paused"  # passiv, no action needed
     WAITING = "waiting"  # active, but blocked by external condition

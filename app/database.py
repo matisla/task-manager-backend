@@ -13,10 +13,10 @@ from sqlmodel import Session, SQLModel, create_engine
 def get_engine() -> Engine:
     """
     Get the database engine.
-    If not created yet, create it based on settings and cached it.
+    If not created yet, create it based on settings and cache it.
 
-    Return:
-        (Engine): the created engine
+    Returns:
+        Engine: the created engine.
     """
 
     settings = get_settings()
@@ -42,7 +42,12 @@ def get_engine() -> Engine:
 
 
 def get_session() -> Generator[Session]:
-    """Session generator"""
+    """
+    Session generator, used as a FastAPI dependency (see `SessionDep`).
+
+    Yields:
+        Session: a database session, closed once the request completes.
+    """
 
     engine = get_engine()
 
@@ -51,7 +56,9 @@ def get_session() -> Generator[Session]:
 
 
 def init_db():
-    """create all tables for database"""
+    """
+    Create all tables for the database.
+    """
 
     engine = get_engine()
 

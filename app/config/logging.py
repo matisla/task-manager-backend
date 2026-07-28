@@ -9,6 +9,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LogLevel(IntEnum):
+    """
+    Supported logging verbosity levels.
+    """
+
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
@@ -33,6 +37,9 @@ class LoggingSettings(BaseSettings):
     def configure(self):
         """
         Configure the logging based on configuration.
+
+        Raises:
+            FileNotFoundError: if `CONFIG_FILE` does not exist or is not a file.
         """
 
         filename = Path(self.CONFIG_FILE)

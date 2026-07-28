@@ -8,6 +8,10 @@ ENGINE: Engine | None = None
 
 
 class DBType(StrEnum):
+    """
+    Supported database backends.
+    """
+
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
 

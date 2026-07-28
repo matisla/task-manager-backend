@@ -75,8 +75,8 @@ def decode_token(token: str) -> dict[str, str] | None:
     Args:
         token (str): token to decode
 
-    Return:
-        dict[str, str] | None: return the payload decoded or None if failed.
+    Returns:
+        dict[str, str] | None: the decoded payload, or None if decoding failed.
     """
     settings = get_settings()
 

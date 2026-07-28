@@ -18,6 +18,14 @@ async def login(
 ):
     """
     Endpoint compatible OpenAPI / Swagger UI.
+    Authenticate a user and return an access and refresh token pair.
+
+    Args:
+        form_data (OAuth2PasswordRequestForm): username and password submitted via form.
+        session (Session): session used to access the database.
+
+    Returns:
+        Token: the issued access and refresh tokens.
     """
 
     return TokenService.login(session, form_data)
@@ -27,6 +35,12 @@ async def login(
 async def refresh_token(refresh_token: str):
     """
     Refresh access token based on `refresh_token`.
+
+    Args:
+        refresh_token (str): the refresh token to exchange for a new token pair.
+
+    Returns:
+        Token: the newly issued access and refresh tokens.
     """
 
     return TokenService.refresh_token(refresh_token)
@@ -43,6 +57,13 @@ async def register(
 ):
     """
     Create a new user and return token.
+
+    Args:
+        user_form (UserCreate): data to use to create the user.
+        session (Session): session used to access the database.
+
+    Returns:
+        UserResponse: the created user.
     """
 
     return UserService.create(session, user_form)
@@ -54,6 +75,12 @@ user_router = APIRouter()
 @user_router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: currentUserDep):
     """
-    Route protégée : nécessite un Bearer Access Token valide.
+    Protected route: requires a valid Bearer access token.
+
+    Args:
+        current_user (User): the user resolved from the access token.
+
+    Returns:
+        UserResponse: the current authenticated user.
     """
     return current_user

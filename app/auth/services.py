@@ -11,6 +11,9 @@ from .security import create_token, decode_token, get_password_hash, verify_pass
 
 
 class UserService:
+    """
+    Service handling user creation.
+    """
 
     @classmethod
     def create(cls, session: Session, data: UserCreate) -> User:
@@ -21,13 +24,11 @@ class UserService:
             session (Session): session to communicate with the database.
             data (UserCreate): data to use to create the user.
 
-        Raise:
-            HTTPException: error if user or email already exist in database.
-
+        Raises:
+            HTTPException: if the username or email already exists in database.
 
         Returns:
-            (User): return the created user.
-
+            User: the created user.
         """
 
         exception = HTTPException(
@@ -69,9 +70,25 @@ class UserService:
 
 
 class TokenService:
+    """
+    Service handling access and refresh token issuance.
+    """
 
     @classmethod
     def login(cls, session: Session, data: OAuth2PasswordRequestForm) -> Token:
+        """
+        Authenticate a user and issue a new access and refresh token pair.
+
+        Args:
+            session (Session): session used to access the database.
+            data (OAuth2PasswordRequestForm): the submitted username and password.
+
+        Raises:
+            HTTPException: if the credentials are invalid.
+
+        Returns:
+            Token: the issued access and refresh tokens.
+        """
 
         settings = get_settings()
         user = User.get_by(session, "username", data.username)
@@ -99,6 +116,18 @@ class TokenService:
 
     @classmethod
     def refresh_token(cls, refresh_token: str) -> Token:
+        """
+        Issue a new access and refresh token pair from a valid refresh token.
+
+        Args:
+            refresh_token (str): the refresh token to exchange.
+
+        Raises:
+            HTTPException: if the refresh token is invalid, expired, or not of type "refresh".
+
+        Returns:
+            Token: the newly issued access and refresh tokens.
+        """
 
         settings = get_settings()
         payload = decode_token(refresh_token)

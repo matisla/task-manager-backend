@@ -9,10 +9,10 @@ origins = [
 
 def set_cors(app: FastAPI):
     """
-    setup the CORS settings
+    Set up the CORS settings.
 
     Args:
-        app (FastAPI): app to setup
+        app (FastAPI): app to set up.
     """
 
     app.add_middleware(

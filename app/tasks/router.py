@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -17,7 +18,14 @@ router = APIRouter()
 async def list_tasks(user: currentUserDep, session: SessionDep):
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    List all tasks of the user
+    List all tasks of the user.
+
+    Args:
+        user (User): the authenticated user.
+        session (Session): session used to access the database.
+
+    Returns:
+        list[TaskRead]: the tasks owned by the user.
     """
 
     statement = select(Task).where(Task.user_id == user.id)
@@ -38,7 +46,15 @@ async def create_task(
 ):
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    Create a new task
+    Create a new task.
+
+    Args:
+        data (TaskCreate): data to use to create the task.
+        user (User): the authenticated user, set as the task owner.
+        session (Session): session used to access the database.
+
+    Returns:
+        TaskRead: the created task.
     """
 
     logger = logging.getLogger(__name__)
@@ -65,10 +81,18 @@ async def create_task(
     "/{task_id}",
     response_model=TaskRead,
 )
-async def detail_task(task_id, user: currentUserDep, session: SessionDep):
+async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: SessionDep):
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    Get detail of a task
+    Get detail of a task.
+
+    Args:
+        task_id (uuid.UUID): id of the task to retrieve.
+        user (User): the authenticated user.
+        session (Session): session used to access the database.
+
+    Returns:
+        TaskRead: the requested task.
     """
 
     logger = logging.getLogger(__name__)
@@ -83,10 +107,18 @@ async def detail_task(task_id, user: currentUserDep, session: SessionDep):
     "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_task(task_id, user: currentUserDep, session: SessionDep):
+async def delete_task(task_id: uuid.UUID, user: currentUserDep, session: SessionDep):
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    Create a new task
+    Delete a task.
+
+    Args:
+        task_id (uuid.UUID): id of the task to delete.
+        user (User): the authenticated user.
+        session (Session): session used to access the database.
+
+    Returns:
+        Response: an empty 204 response.
     """
 
     logger = logging.getLogger(__name__)

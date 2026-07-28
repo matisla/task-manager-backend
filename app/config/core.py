@@ -13,6 +13,10 @@ from .logging import LoggingSettings
 
 
 class Environment(StrEnum):
+    """
+    Environment in which the application is running.
+    """
+
     DEV = "development"
     PROD = "production"
     TEST = "test"
@@ -42,13 +46,13 @@ class Settings(BaseSettings):
 @cache
 def get_settings(filename: str | Path | None = None) -> Settings:
     """
-    get the settings object with all the settings of the app
+    Get the settings object with all the settings of the app.
 
     Args:
         filename (str | Path | None): path of the file to load for the environment.
 
     Returns:
-        the settings object
+        Settings: the settings object.
     """
     settings = None
 
@@ -71,14 +75,13 @@ def get_settings(filename: str | Path | None = None) -> Settings:
 
 def load_settings(filename: str | Path | None = None) -> Settings:
     """
-    Load the settings configuration
+    Load the settings configuration, bypassing the `get_settings` cache.
 
     Args:
-        filename (str | Path | None): if exists load a specific env file or call default parameter
-        force (bool): if force to reload or use Singleton behaviour
+        filename (str | Path | None): if provided, load this specific env file, else use the default parameters.
 
-    Return:
-        (Settings): the settings
+    Returns:
+        Settings: the settings.
     """
 
     get_settings.cache_clear()

@@ -28,12 +28,15 @@ class User(SQLModel, table=True):
     @classmethod
     def get_by(cls, session: Session, attribute: str, value: str) -> User | None:
         """
-        Get the user by an attribute
+        Get the user by an attribute.
 
         Args:
-            session (Session): session used to access the database
-            attribute (str): attribute to use to select the User
-            username (str): value to use to select the User
+            session (Session): session used to access the database.
+            attribute (str): attribute to use to select the User, either "username" or "email".
+            value (str): value to use to select the User.
+
+        Raises:
+            AttributeError: if `attribute` is neither "username" nor "email".
 
         Returns:
             User | None: the User object or None if not found.

@@ -19,13 +19,14 @@ async def get_current_user(
     Expect "Authorization: Bearer <token>"
 
     Args:
-        token (str): token to acquire user from
+        token (str): token to acquire user from.
+        session (Session): session used to access the database.
 
     Raises:
         HTTPException: when not able to acquire the user from token.
 
     Returns:
-        user (...): the acquired user
+        User: the acquired user.
     """
 
     credentials_exception = HTTPException(

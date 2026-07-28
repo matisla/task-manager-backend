@@ -30,6 +30,10 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
+    """
+    Schema for exposing a user through the API.
+    """
+
     id: uuid.UUID
     username: str
     firstname: str
@@ -42,11 +46,19 @@ class UserResponse(BaseModel):
 
 
 class Token(BaseModel):
+    """
+    Schema for an access and refresh token pair.
+    """
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
 
 class TokenPayload(BaseModel):
+    """
+    Schema for the payload encoded in a JWT token.
+    """
+
     sub: str
     type: str
