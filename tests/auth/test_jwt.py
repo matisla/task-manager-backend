@@ -1,10 +1,9 @@
 import logging
 import uuid
 
+from auth.models import User
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-
-from auth.models import User
 
 
 class TestJWT:
