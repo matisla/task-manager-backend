@@ -11,8 +11,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from .database import DatabaseSettings
 from .logging import LoggingSettings
 
-logger = logging.getLogger(__name__)
-
 
 class Environment(StrEnum):
     DEV = "development"
@@ -64,6 +62,8 @@ def get_settings(filename: str | Path | None = None) -> Settings:
     settings = Settings()
 
     settings.log.configure()
+
+    logger = logging.getLogger(__name__)
     logger.debug(f"Settings loaded from {filename or 'default'}")
 
     return settings

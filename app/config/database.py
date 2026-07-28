@@ -1,11 +1,8 @@
-import logging
 from enum import StrEnum
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import Engine
-
-logger = logging.getLogger(__name__)
 
 ENGINE: Engine | None = None
 
