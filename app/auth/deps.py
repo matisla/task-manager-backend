@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from database import SessionDep
@@ -49,8 +50,13 @@ async def get_current_user(
     if user_id is None:
         raise credentials_exception
 
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        raise credentials_exception from None
+
     # get the user from the database
-    user = session.get(User, user_id)
+    user = session.get(User, user_uuid)
 
     if user is None:
         raise credentials_exception
