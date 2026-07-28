@@ -2,13 +2,12 @@ import logging
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-
 from tasks.models import Task
 
 
 class TestTask:
 
-    def test_register(self, client: TestClient, session: Session):
+    def test_create_task(self, client: TestClient, session: Session):
 
         self.logger = logging.getLogger(__name__)
 

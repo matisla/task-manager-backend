@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -25,6 +26,6 @@ class TestJWT:
 
         user = response.json()
 
-        db_user = session.get(User, user.id)
+        db_user = session.get(User, uuid.UUID(user["id"]))
 
-        assert db_user.username == user.username
+        assert db_user.username == user["username"]
