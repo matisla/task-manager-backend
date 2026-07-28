@@ -1,11 +1,25 @@
 import logging
-from datetime import timedelta
+import uuid
+from datetime import UTC, datetime, timedelta
 
+import jwt
+import pytest
+from auth.models import User
 from auth.security import create_token, decode_token
+from config import get_settings
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from .factories import UserFactory
+
+
+def make_token(**payload) -> str:
+    """
+    Build a raw JWT from an arbitrary payload, bypassing `create_token`'s defaults.
+    """
+
+    settings = get_settings()
+    return jwt.encode(payload, settings.auth.SECRET_KEY, algorithm=settings.auth.ALGORITHM)
 
 
 def build_register_payload(**overrides) -> dict:
@@ -211,3 +225,55 @@ class TestJWT:
         assert payload is not None
         assert payload["sub"] == "test-subject"
         assert payload["type"] == "access"
+
+    def test_read_current_user_token_without_subject(self, auth_client: TestClient):
+
+        token = make_token(type="access", exp=datetime.now(UTC) + timedelta(minutes=5))
+
+        response = auth_client.get(
+            "/users/me", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 401
+
+    def test_read_current_user_token_with_malformed_subject(self, auth_client: TestClient):
+
+        token = create_token(subject="not-a-uuid", expires_delta=timedelta(minutes=5))
+
+        response = auth_client.get(
+            "/users/me", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 401
+
+    def test_read_current_user_unknown_subject(self, auth_client: TestClient):
+
+        token = create_token(subject=str(uuid.uuid4()), expires_delta=timedelta(minutes=5))
+
+        response = auth_client.get(
+            "/users/me", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 401
+
+    def test_read_current_user_deactivated(self, auth_client: TestClient, session: Session):
+
+        data = register(auth_client)
+
+        login_response = auth_client.post(
+            "/auth/login",
+            data={"username": data["username"], "password": data["password"]},
+        )
+        access_token = login_response.json()["access_token"]
+
+        db_user = User.get_by(session, "username", data["username"])
+        db_user.is_active = False
+        session.add(db_user)
+        session.commit()
+
+        response = auth_client.get(
+            "/users/me", headers={"Authorization": f"Bearer {access_token}"}
+        )
+        assert response.status_code == 400
+
+    def test_get_by_invalid_attribute(self, session: Session):
+
+        with pytest.raises(AttributeError):
+            User.get_by(session, "bogus_attribute", "value")
