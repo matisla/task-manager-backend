@@ -1,4 +1,5 @@
 import logging
+from functools import cache
 from pathlib import Path
 
 import pytest
@@ -14,11 +15,16 @@ def session():
     yield from get_session()
 
 
-def override_get_current_user():
-    fake_user = User(
-        username="johndoe", email="johndoe@example.fr", hashed_password="fake"
-    )
-    return fake_user
+@cache
+def override_get_current_user() -> User:
+    """Same fake user across requests, so ownership (eg. user_id) stays consistent."""
+
+    return User(username="johndoe", email="johndoe@example.fr", hashed_password="fake")
+
+
+@pytest.fixture(scope="session")
+def current_user() -> User:
+    return override_get_current_user()
 
 
 @pytest.fixture(scope="session")
