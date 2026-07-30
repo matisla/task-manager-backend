@@ -82,6 +82,9 @@ uv run pytest ...
 
 # interaction avec l'application en dev, pour les logs etc.
 docker compose ...
+
+# créer une révision alembic (autogenerate) après modification d'un model
+uv run alembic -m "..."
 ```
 
 ## Convention de code
@@ -104,8 +107,18 @@ docker compose ...
 
 - Base de données tests/database.db, à supprimer si nécessaire AVANT les tests
 
+## Migrations (Alembic)
+
+- Dès qu'un `models.py` (`app/<feature>/models.py`) est créé ou modifié (nouveau champ, nouvelle table, relation, contrainte, etc.),
+  la création d'une nouvelle révision Alembic doit être être proposé à l'utilsateur dans la même tâche, si accepté créer via `uv run alembic revision --autogenerate -m "message"`.
+- Le message de révision doit être en anglais et décrire le changement de schéma (ex: `"add due_date to task"`).
+- Toujours relire le fichier généré dans `alembic/versions/` avant de le considérer terminé : l'autogenerate peut manquer certains changements (renommage de colonne, changement de type sur SQLite, etc.) ou nécessiter un ajustement manuel.
+- Ne pas exécuter `alembic upgrade head` sur l'environnement de dev sans le demander à l'utilisateur au préalable (action ayant un effet sur une base partagée).
+- `alembic/env.py` construit dynamiquement l'URL de connexion à partir des settings de l'application (`get_settings().db.connexion_url`) : ne pas coder en dur une URL dans `alembic.ini`.
+
 ## Notes pour Claude
 
 - Toujours répondre et expliquer en **français**, même si le code produit est en anglais.
 - Avant de modifier un fichier existant, vérifier les conventions déjà en place dans le dépôt plutôt que d'imposer un nouveau style.
 - Ne pas ajouter de dépendances sans les mentionner explicitement dans les explications.
+- Après toute modification d'un `models.py`, créer proposer à l'utilisateur de créer la révision Alembic correspondante (voir section "Migrations (Alembic)"), sans attendre une demande explicite.
