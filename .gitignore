@@ -23,3 +23,8 @@ tests/database.db
 
 # logs
 **/*.log
+
+# Claude configuration
+!.claude/settings.local.json
+!.claude/CLAUDE.md
+
