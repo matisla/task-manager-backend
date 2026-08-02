@@ -2,7 +2,8 @@ import uuid
 from collections.abc import Sequence
 
 from pydantic import BaseModel
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import SQLModel, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class DefaultRepository[ModelType: SQLModel]:
@@ -12,8 +13,8 @@ class DefaultRepository[ModelType: SQLModel]:
 
     model: type[ModelType]
 
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     def get(self, primary_key: uuid.UUID) -> ModelType | None:
         """
@@ -26,7 +27,7 @@ class DefaultRepository[ModelType: SQLModel]:
             ModelType | None: the instance, or None if not found.
         """
 
-        return self.db.get(self.model, primary_key)
+        return self.session.get(self.model, primary_key)
 
     def list(self, filters: BaseModel | None = None) -> Sequence[ModelType]:
         """
@@ -49,7 +50,7 @@ class DefaultRepository[ModelType: SQLModel]:
                 if column is not None:
                     statement = statement.where(column == value)
 
-        return self.db.exec(statement).all()
+        return self.session.exec(statement).all()
 
     def create(self, **kwargs) -> ModelType:
         """
@@ -64,9 +65,9 @@ class DefaultRepository[ModelType: SQLModel]:
 
         instance = self.model(**kwargs)
 
-        self.db.add(instance)
-        self.db.commit()
-        self.db.refresh(instance)
+        self.session.add(instance)
+        self.session.commit()
+        self.session.refresh(instance)
 
         return instance
 
@@ -85,9 +86,9 @@ class DefaultRepository[ModelType: SQLModel]:
         for field, value in kwargs.items():
             setattr(instance, field, value)
 
-        self.db.add(instance)
-        self.db.commit()
-        self.db.refresh(instance)
+        self.session.add(instance)
+        self.session.commit()
+        self.session.refresh(instance)
 
         return instance
 
@@ -99,5 +100,5 @@ class DefaultRepository[ModelType: SQLModel]:
             instance (ModelType): the instance to delete.
         """
 
-        self.db.delete(instance)
-        self.db.commit()
+        self.session.delete(instance)
+        self.session.commit()

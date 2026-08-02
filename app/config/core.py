@@ -4,11 +4,11 @@ from functools import cache
 from pathlib import Path
 
 from auth.settings import AuthSettings
+from db.settings import DatabaseSettings
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .database import DatabaseSettings
 from .logging import LoggingSettings
 
 
@@ -22,6 +22,32 @@ class Environment(StrEnum):
     TEST = "test"
 
 
+class CORSSettings(BaseSettings):
+    """
+    CORS settings
+    """
+
+    ALLOW_ORIGINS: list[str] = Field(default=["http://localhost", "http://localhost:8000"])
+    ALLOW_CREDENTIALS: bool = Field(default=True)
+    ALLOW_METHODS: list[str] = Field(default=["*"])
+    ALLOW_HEADERS: list[str] = Field(default=["*"])
+
+    model_config = SettingsConfigDict(
+        env_prefix="CORS_",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    @property
+    def allows(self):
+        return {
+            "allow_origins": self.ALLOW_ORIGINS,
+            "allow_credentials": self.ALLOW_CREDENTIALS,
+            "allow_methods": self.ALLOW_METHODS,
+            "allow_headers": self.ALLOW_HEADERS,
+        }
+
+
 class Settings(BaseSettings):
     """
     Global settings
@@ -30,12 +56,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Tasks Manager"
     ENVIRONMENT: Environment = Environment.DEV
     DEBUG: bool = False
-    CORS_ORIGINS: list[str] = Field(default=["http://localhost", "http://localhost:8000"])
 
     # Authentication settings
     auth: AuthSettings = Field(default_factory=AuthSettings)
     db: DatabaseSettings = Field(default_factory=DatabaseSettings)
     log: LoggingSettings = Field(default_factory=LoggingSettings)
+    cors: CORSSettings = Field(default_factory=CORSSettings)
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",

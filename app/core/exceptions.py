@@ -1,3 +1,7 @@
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
 class AppError(Exception):
     """
     Base class for business errors, translated to HTTP responses by a central handler.
@@ -45,3 +49,10 @@ class UnauthorizedError(AppError):
 
     status_code = 401
     detail = "Unauthorized"
+
+
+async def app_error_handler(request: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.__class__.__name__, "detail": exc.detail},
+    )

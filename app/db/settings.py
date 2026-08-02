@@ -3,6 +3,8 @@ from enum import StrEnum
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+type DatabaseUrl = str
+
 
 class DBType(StrEnum):
     """
@@ -36,7 +38,7 @@ class DatabaseSettings(BaseSettings):
     )
 
     @property
-    def connexion_url(self) -> str:
+    def connexion_url(self) -> DatabaseUrl:
         """
         Build and return the connexion URL for database.
         Or use the attribute URL if defined

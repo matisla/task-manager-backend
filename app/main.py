@@ -1,54 +1,57 @@
-import logging
-from pathlib import Path
+from contextlib import asynccontextmanager
 
 import uvicorn
-from auth.router import auth_router, user_router
-from config import Environment, load_settings
-from config.cors import set_cors
-from core.exceptions import AppError
-from core.router import core_router
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from tasks.router import tasks_router
+from config import Environment, get_settings
+from config.core import Settings
+from core.exceptions import AppError, app_error_handler
+from db.session import create_db_engine, create_session_factory
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from router import api_router
 
 
-def create_app(env_path: str | Path | None = None) -> FastAPI:
-    """
-    Create app instance for the application.
+def create_app(settings: Settings | None = None) -> FastAPI:
 
-    Args:
-        env_path (str | Path | None): if provided, load this specific env file,
-            else use the default parameters.
+    settings_: Settings = settings or get_settings()
 
-    Returns:
-        FastAPI: the configured application instance.
-    """
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
 
-    settings = load_settings(env_path)
-    logger = logging.getLogger(__name__)
+        engine = create_db_engine(settings_.db.connexion_url)
 
-    fast_app = FastAPI(
-        title=settings.PROJECT_NAME,
-        debug=settings.DEBUG,
-        docs_url="/docs" if settings.ENVIRONMENT != Environment.PROD else None,
-        redoc_url="/redoc" if settings.ENVIRONMENT != Environment.PROD else None,
+        # fail-fast check for database connexion
+        async with engine.connect():
+            pass
+
+        # aquire a session to generate a ping to database
+        app.state.session_factory = create_session_factory(engine)
+
+        yield
+
+        # close connexion with the database
+        await engine.dispose()
+
+    app = FastAPI(
+        title=settings_.PROJECT_NAME,
+        debug=settings_.DEBUG,
+        docs_url="/docs" if settings_.ENVIRONMENT != Environment.PROD else None,
+        redoc_url="/redoc" if settings_.ENVIRONMENT != Environment.PROD else None,
+        lifespan=lifespan,
     )
 
-    fast_app.include_router(auth_router)
-    fast_app.include_router(user_router)
-    fast_app.include_router(tasks_router)
-    fast_app.include_router(core_router)
+    app.add_exception_handler(AppError, app_error_handler)
+    app.add_middleware(CORSMiddleware, **settings_.cors.allows)
 
-    @fast_app.exception_handler(AppError)
-    async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    app.include_router(api_router, prefix="/api")
 
-    set_cors(fast_app)
+    @app.get("/health", tags=["infra"])
+    async def health():
+        return {"status": "ok"}
 
-    logger.debug("FastAPI ready")
+    return app
 
-    return fast_app
 
+app = create_app()
 
 if __name__ == "__main__":
     uvicorn.run("asgi:app", host="0.0.0.0", port=8000)
