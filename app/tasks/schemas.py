@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from .models import Status
+
 
 class TaskBase(BaseModel):
     """
@@ -29,6 +31,7 @@ class TaskRead(TaskBase):
     """
 
     id: uuid.UUID
+    status: Status
     created_at: datetime
     updated_at: datetime | None
 
