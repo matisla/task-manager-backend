@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from .models import User
+from .repositories import UserRepository
 from .schemas import Token, UserCreate
 from .security import create_token, decode_token, get_password_hash, verify_password
 
@@ -35,13 +36,14 @@ class UserService:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username or Email already exist",
         )
+        repository = UserRepository(session)
 
         # Check if User is already existing
-        exist_user = User.get_by(session, "username", data.username)
+        exist_user = repository.get_by("username", data.username)
         if exist_user:
             raise exception
 
-        exist_user = User.get_by(session, "email", data.email)
+        exist_user = repository.get_by("email", data.email)
         if exist_user:
             raise exception
 
@@ -51,7 +53,7 @@ class UserService:
 
         # Create user
 
-        db_user = User(
+        user = repository.create(
             username=data.username,
             firstname=data.firstname,
             lastname=data.lastname,
@@ -60,13 +62,7 @@ class UserService:
             created_at=datetime.now(UTC),
         )
 
-        # publish to database
-
-        session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
-
-        return db_user
+        return user
 
 
 class TokenService:

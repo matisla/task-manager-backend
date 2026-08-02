@@ -9,10 +9,9 @@ if TYPE_CHECKING:
 
 
 class User(SQLModel, table=True):
-    """
+   """
     User model for the database
     """
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     firstname: str | None = Field(max_length=64, default=None)
     lastname: str | None = Field(max_length=64, default=None)
@@ -25,32 +24,3 @@ class User(SQLModel, table=True):
 
     tasks: list["Task"] = Relationship(back_populates="user")
 
-    @classmethod
-    def get_by(cls, session: Session, attribute: str, value: str) -> User | None:
-        """
-        Get the user by an attribute.
-
-        Args:
-            session (Session): session used to access the database.
-            attribute (str): attribute to use to select the User, either "username" or "email".
-            value (str): value to use to select the User.
-
-        Raises:
-            AttributeError: if `attribute` is neither "username" nor "email".
-
-        Returns:
-            User | None: the User object or None if not found.
-        """
-
-        statement = None
-
-        match attribute:
-            case "username":
-                statement = select(User).where(User.username == value)
-            case "email":
-                statement = select(User).where(User.email == value)
-            case _:
-                raise AttributeError("attribute shall be 'username' or 'email'")
-
-        user: User | None = session.exec(statement).first()
-        return user

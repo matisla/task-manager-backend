@@ -18,6 +18,8 @@ class Status(str, Enum):
     PLANNED = "planned"  # ready to start
     IN_PROGRESS = "in_progress"  # active, on going
     DONE = "done"  # finished
+    CANCELLED = "cancelled"  # abandoned, failure or user decision
+    ARCHIVED = "archived"  # hidden from frontend, kept in database
 
 
 class Task(SQLModel, table=True):
