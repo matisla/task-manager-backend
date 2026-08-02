@@ -17,7 +17,5 @@ class UserFactory(factory.Factory):
     username = factory.Sequence(lambda n: f"{fake.user_name()}_{n}")
     firstname = factory.Faker("first_name")
     lastname = factory.Faker("last_name")
-    email = factory.Sequence(
-        lambda n: f"{fake.user_name()}_{n}@{fake.free_email_domain()}"
-    )
+    email = factory.Sequence(lambda n: f"{fake.user_name()}_{n}@{fake.free_email_domain()}")
     hashed_password = factory.Faker("password")

@@ -4,19 +4,22 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     """
-    Schema for creating a new user
+    Fields shared by every user schema.
     """
 
     username: str = Field(min_length=3, max_length=63, examples=["johndoe"])
-    firstname: str | None = Field(
-        min_length=1, max_length=64, default=None, examples=["John"]
-    )
-    lastname: str | None = Field(
-        min_length=1, max_length=64, default=None, examples=["Doe"]
-    )
+    firstname: str | None = Field(min_length=1, max_length=64, default=None, examples=["John"])
+    lastname: str | None = Field(min_length=1, max_length=64, default=None, examples=["Doe"])
     email: EmailStr = Field(examples=["johndoe@example.com"])
+
+
+class UserCreate(UserBase):
+    """
+    Schema for creating a new user.
+    """
+
     password: str = Field(min_length=8, examples=["SecuredPassword_123!"])
 
 
@@ -29,16 +32,12 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserResponse(BaseModel):
+class UserResponse(UserBase):
     """
     Schema for exposing a user through the API.
     """
 
     id: uuid.UUID
-    username: str
-    firstname: str
-    lastname: str
-    email: EmailStr
     is_active: bool
     created_at: datetime
 

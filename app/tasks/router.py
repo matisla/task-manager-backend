@@ -1,27 +1,31 @@
 import logging
 import uuid
-from datetime import UTC, datetime
 from typing import Annotated
 
 from auth.deps import currentUserDep
 from database import SessionDep
-from fastapi import APIRouter, Form, Response, status
-from sqlmodel import select
+from fastapi import APIRouter, Form, Query, Response, status
 
-from .models import Status, Task
+from .filters import TaskFilter
+from .models import Status
 from .schemas import TaskCreate, TaskRead
 from .services import TaskService
 
-router = APIRouter()
+tasks_router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-@router.get("", response_model=list[TaskRead])
-async def list_tasks(user: currentUserDep, session: SessionDep):
+@tasks_router.get("", response_model=list[TaskRead])
+async def list_tasks(
+    filters: Annotated[TaskFilter, Query()],
+    user: currentUserDep,
+    session: SessionDep,
+):
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    List all tasks of the user.
+    List all tasks of the user, optionally filtered by status/parent_id.
 
     Args:
+        filters (TaskFilter): equality filters requested by the client.
         user (User): the authenticated user.
         session (Session): session used to access the database.
 
@@ -29,13 +33,10 @@ async def list_tasks(user: currentUserDep, session: SessionDep):
         list[TaskRead]: the tasks owned by the user.
     """
 
-    statement = select(Task).where(Task.user_id == user.id)
-    tasks = session.exec(statement).all()
-
-    return tasks
+    return TaskService.list(session, filters, user)
 
 
-@router.post(
+@tasks_router.post(
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=TaskRead,
@@ -61,24 +62,10 @@ async def create_task(
     logger = logging.getLogger(__name__)
     logger.debug(f"Try to create a new task: {data}")
 
-    db_task = Task(
-        title=data.title,
-        description=data.description or "",
-        created_at=datetime.now(UTC),
-        start_date=data.start_date,
-        due_date=data.due_date,
-        user_id=user.id,
-        parent_id=data.parent_id,
-    )
-
-    session.add(db_task)
-    session.commit()
-    session.refresh(db_task)
-
-    return db_task
+    return TaskService.create(session, data, user)
 
 
-@router.get(
+@tasks_router.get(
     "/{task_id}",
     response_model=TaskRead,
 )
@@ -104,7 +91,7 @@ async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: Session
     return task
 
 
-@router.delete(
+@tasks_router.delete(
     "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -133,7 +120,7 @@ async def delete_task(task_id: uuid.UUID, user: currentUserDep, session: Session
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post(
+@tasks_router.post(
     "/{task_id}/{target_status}",
     response_model=TaskRead,
 )

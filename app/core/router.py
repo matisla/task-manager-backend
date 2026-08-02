@@ -1,20 +1,36 @@
 from database import SessionDep
 from fastapi import APIRouter
+from sqlmodel import select
 
-router = APIRouter()
+core_router = APIRouter(tags=["Core"])
 
 
-@router.get("/")
-async def homepage(session: SessionDep):
+@core_router.get("/")
+async def homepage():
     """
     Endpoint compatible OpenAPI / Swagger UI.
-    Basic healthcheck / greeting endpoint.
+    Basic root/greeting endpoint.
+
+    Returns:
+        dict: a greeting message.
+    """
+
+    return {"greeting": "Hello World !"}
+
+
+@core_router.get("/health")
+async def health(session: SessionDep):
+    """
+    Infra healthcheck endpoint: verifies the database is reachable.
+    Not versioned, not part of the client-facing API contract.
 
     Args:
         session (Session): session used to access the database.
 
     Returns:
-        str: a greeting message.
+        dict: the health status.
     """
 
-    return str({"greeting": "Hello World !"})
+    session.exec(select(1))
+
+    return {"status": "ok"}

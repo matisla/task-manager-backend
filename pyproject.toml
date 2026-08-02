@@ -35,7 +35,25 @@ test = [
     "faker>=40.36.0",
 ]
 
-[tool.pytest]
+[tool.pytest.ini_options]
 pythonpath = ["app"]
 addopts = ["-ras", "-vv", "--cov=app", "--cov-report=html"]
 log_level = "DEBUG"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# prevent ruff to fix (and break) database definition: UP006/UP007/UP037/UP045
+# rewrite quoted forward references (eg. `Optional["Task"]`, `list["Task"]`) into
+# their unquoted form, which crashes at import time on SQLModel's Relationship()
+# string forward refs (or on TYPE_CHECKING-only imports).
+"**/models.py" = ["UP006", "UP007", "UP037", "UP045"]
+
+[tool.black]
+line-length = 100
+target-version = ["py314"]

@@ -26,18 +26,10 @@ def upgrade() -> None:
     op.create_table(
         "user",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "firstname", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=True
-        ),
-        sa.Column(
-            "lastname", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=True
-        ),
-        sa.Column(
-            "username", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False
-        ),
-        sa.Column(
-            "email", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
-        ),
+        sa.Column("firstname", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=True),
+        sa.Column("lastname", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=True),
+        sa.Column("username", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False),
+        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
         sa.Column(
             "hashed_password",
             sqlmodel.sql.sqltypes.AutoString(length=255),
@@ -53,9 +45,7 @@ def upgrade() -> None:
     op.create_table(
         "task",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "title", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False
-        ),
+        sa.Column("title", sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
         sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
             "status",

@@ -2,9 +2,6 @@ from enum import StrEnum
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy.engine import Engine
-
-ENGINE: Engine | None = None
 
 
 class DBType(StrEnum):
@@ -52,6 +49,6 @@ class DatabaseSettings(BaseSettings):
             return self.URL
 
         if self.TYPE == DBType.SQLITE:
-            return f"sqlite://{self.FILENAME}"
+            return f"sqlite:///{self.FILENAME}"
 
         return f"{self.TYPE}://{self.USER}:{self.PASSWORD}@{self.SERVER}:{self.PORT}/{self.NAME}"

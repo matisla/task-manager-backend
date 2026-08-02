@@ -8,6 +8,18 @@ from fastapi import Depends
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
+# Explicit naming convention, applied once at import time, so constraint names
+# are deterministic across backends (SQLite/Postgres) instead of driver-generated,
+# keeping Alembic's autogenerate diffs stable and readable.
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+SQLModel.metadata.naming_convention = NAMING_CONVENTION
+
 
 @cache
 def get_engine() -> Engine:
@@ -24,9 +36,7 @@ def get_engine() -> Engine:
 
     logger.debug(f"Creating the {settings.db.TYPE} database engine.")
 
-    connect_args = (
-        {"check_same_thread": False} if settings.ENVIRONMENT == Environment.TEST else {}
-    )
+    connect_args = {"check_same_thread": False} if settings.ENVIRONMENT == Environment.TEST else {}
 
     engine = create_engine(
         settings.db.connexion_url,
@@ -53,19 +63,6 @@ def get_session() -> Generator[Session]:
 
     with Session(engine) as session:
         yield session
-
-
-def init_db():
-    """
-    Create all tables for the database.
-    """
-
-    engine = get_engine()
-
-    logger = logging.getLogger(__name__)
-    logger.debug("Initialize Database")
-
-    SQLModel.metadata.create_all(engine)
 
 
 SessionDep = Annotated[Session, Depends(get_session)]

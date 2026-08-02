@@ -50,7 +50,7 @@ class LoggingSettings(BaseSettings):
         if not filename.is_file():
             raise FileNotFoundError(f"'{self.CONFIG_FILE}' is not a file.")
 
-        with open(filename, "r", encoding="utf-8") as fn:
+        with open(filename, encoding="utf-8") as fn:
             content = yaml.safe_load(fn.read())
             dictConfig(content)
 

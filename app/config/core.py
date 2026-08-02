@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Tasks Manager"
     ENVIRONMENT: Environment = Environment.DEV
     DEBUG: bool = False
+    CORS_ORIGINS: list[str] = Field(default=["http://localhost", "http://localhost:8000"])
 
     # Authentication settings
     auth: AuthSettings = Field(default_factory=AuthSettings)
@@ -78,7 +79,8 @@ def load_settings(filename: str | Path | None = None) -> Settings:
     Load the settings configuration, bypassing the `get_settings` cache.
 
     Args:
-        filename (str | Path | None): if provided, load this specific env file, else use the default parameters.
+        filename (str | Path | None): if provided, load this specific env file,
+            else use the default parameters.
 
     Returns:
         Settings: the settings.

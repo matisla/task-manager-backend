@@ -5,9 +5,11 @@ import uvicorn
 from auth.router import auth_router, user_router
 from config import Environment, load_settings
 from config.cors import set_cors
-from core.router import router as core_router
-from fastapi import FastAPI
-from tasks.router import router as tasks_router
+from core.exceptions import AppError
+from core.router import core_router
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from tasks.router import tasks_router
 
 
 def create_app(env_path: str | Path | None = None) -> FastAPI:
@@ -15,7 +17,8 @@ def create_app(env_path: str | Path | None = None) -> FastAPI:
     Create app instance for the application.
 
     Args:
-        env_path (str | Path | None): if provided, load this specific env file, else use the default parameters.
+        env_path (str | Path | None): if provided, load this specific env file,
+            else use the default parameters.
 
     Returns:
         FastAPI: the configured application instance.
@@ -27,14 +30,18 @@ def create_app(env_path: str | Path | None = None) -> FastAPI:
     fast_app = FastAPI(
         title=settings.PROJECT_NAME,
         debug=settings.DEBUG,
-        docs_url="/docs" if settings.ENVIRONMENT == Environment.DEV else None,
-        redoc_url="/redoc" if settings.ENVIRONMENT == Environment.DEV else None,
+        docs_url="/docs" if settings.ENVIRONMENT != Environment.PROD else None,
+        redoc_url="/redoc" if settings.ENVIRONMENT != Environment.PROD else None,
     )
 
-    fast_app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-    fast_app.include_router(user_router, prefix="/users", tags=["Users"])
-    fast_app.include_router(tasks_router, prefix="/tasks", tags=["Tasks"])
-    fast_app.include_router(core_router, tags=["Core"])
+    fast_app.include_router(auth_router)
+    fast_app.include_router(user_router)
+    fast_app.include_router(tasks_router)
+    fast_app.include_router(core_router)
+
+    @fast_app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     set_cors(fast_app)
 

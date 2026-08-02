@@ -8,7 +8,7 @@ from .deps import currentUserDep
 from .schemas import Token, UserCreate, UserResponse
 from .services import TokenService, UserService
 
-auth_router = APIRouter()
+auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @auth_router.post("/login", response_model=Token)
@@ -69,7 +69,7 @@ async def register(
     return UserService.create(session, user_form)
 
 
-user_router = APIRouter()
+user_router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @user_router.get("/me", response_model=UserResponse)

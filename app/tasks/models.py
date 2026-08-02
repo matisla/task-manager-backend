@@ -1,13 +1,16 @@
 import uuid
 from datetime import UTC, datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Optional
 
 from auth.models import User
+from core.mixins import IDMixin
+from dateutil.rrule import rrulestr
+from pydantic import model_validator, validator
 from sqlmodel import Field, Relationship, SQLModel
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """
     Lifecycle status of a task.
     """
@@ -22,12 +25,10 @@ class Status(str, Enum):
     ARCHIVED = "archived"  # hidden from frontend, kept in database
 
 
-class Task(SQLModel, table=True):
+class Task(IDMixin, table=True):
     """
     Task object
     """
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
     # Define
     title: str = Field(index=True, max_length=255)
@@ -48,9 +49,113 @@ class Task(SQLModel, table=True):
     parent_id: uuid.UUID | None = Field(default=None, foreign_key="task.id")
 
     # Autojointure for sub-tasks (Parent / Child)
-    parent: Optional["Task"] = Relationship(
+    parent: Optional[Task] = Relationship(
         back_populates="children",
         sa_relationship_kwargs={"remote_side": "Task.id"},
     )
-    children: list["Task"] = Relationship(back_populates="parent")
+    children: list[Task] = Relationship(back_populates="parent")
     user: User = Relationship(back_populates="tasks")
+
+
+class RoutineStatus(str, Enum):
+    """
+    Lifecycle status of a Routine.
+    """
+
+    UNDEFINED = "undefined"  # not fully defined
+    ACTIVE = "active"  # running
+    INACTIVE = "inactive"  # paused
+    ARCHIVED = "archived"  # moved to background
+
+
+class RecurrencyType(str, Enum):
+    """
+    Type of Recurrency for Routines
+    """
+
+    FIXED_SCHEDULE = "fixed"  # based on calendar
+    AFTER_COMPLETED = "relative"  # relative to last completion
+
+
+class Routine(SQLModel, table=True):
+    """
+    Routine object, representing an action to proceeded with a cyclic repetition.
+    """
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Define
+    title: str = Field(index=True, max_length=255)
+    description: str = Field(default="")
+    status: RoutineStatus = Field(default=RoutineStatus.UNDEFINED)
+
+    recurrency_type: RecurrencyType = Field(default=RecurrencyType.FIXED_SCHEDULE)
+
+    start_date: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        description="starting point for recurrency calculation",
+    )
+
+    # strategy FIXED_SCHEDULE
+    recurrency_rule: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Recurrency rule in RRULE (RFC 5545) format",
+    )
+
+    # strategy RELATIVE
+    interval_days: int = Field(default=0, gt=-1)
+
+    @validator("recurrency_rule")
+    def _rrule_check(cls, rule: str | None) -> str | None:
+        """
+        Validate the recurrency rules based RULE (RFC 5545)
+
+        Args:
+            rule (str | None): rule to validate, if None skip
+
+        Return:
+            (str | None): the rule validated
+
+        """
+        try:
+            rrulestr(rule) if rule is not None else None
+        except ValueError:
+            raise ValueError("Name cannot be an empty string") from None
+
+        return rule
+
+    @model_validator(mode="after")
+    def _check_recurrence_config(self) -> Routine:
+        """
+        Validate configuration
+
+        Args:
+        """
+
+        if self.recurrency_type == RecurrencyType.FIXED_SCHEDULE:
+
+            if not self.recurrency_rule or not self.start_date:
+                raise ValueError(
+                    "recurrence_rule et start_date sont requis pour une routine "
+                    "de type FIXED_SCHEDULE"
+                )
+            if self.interval_days is not None:
+                raise ValueError(
+                    "interval_days ne doit pas être défini pour une routine "
+                    "de type FIXED_SCHEDULE"
+                )
+
+        elif self.recurrency_type == RecurrencyType.AFTER_COMPLETED:
+
+            if self.interval_days is None:
+                raise ValueError(
+                    "interval_days est requis pour une routine de type AFTER_COMPLETION"
+                )
+            if self.recurrency_rule is not None or self.start_date is not None:
+                raise ValueError(
+                    "recurrence_rule et start_date ne doivent pas être définis "
+                    "pour une routine de type AFTER_COMPLETION"
+                )
+
+        return self

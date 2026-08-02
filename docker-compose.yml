@@ -16,10 +16,14 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/code/app
+    networks:
+      - task-manager
   db:
     image: postgres:latest
     restart: always
     container_name: postgres_db
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_DB: tasksmanager
       POSTGRES_PASSWORD: postgres_pwd
@@ -31,12 +35,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - task-manager
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+    networks:
+      - task-manager
 
 volumes:
   postgres_data:
+
+networks:
+  task-manager:

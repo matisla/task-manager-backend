@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from config import get_settings
-from fastapi import HTTPException, status
+from core.exceptions import BadRequestError, UnauthorizedError
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
@@ -26,16 +26,13 @@ class UserService:
             data (UserCreate): data to use to create the user.
 
         Raises:
-            HTTPException: if the username or email already exists in database.
+            BadRequestError: if the username or email already exists in database.
 
         Returns:
             User: the created user.
         """
 
-        exception = HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or Email already exist",
-        )
+        exception = BadRequestError("Username or Email already exist")
         repository = UserRepository(session)
 
         # Check if User is already existing
@@ -80,22 +77,18 @@ class TokenService:
             data (OAuth2PasswordRequestForm): the submitted username and password.
 
         Raises:
-            HTTPException: if the credentials are invalid.
+            UnauthorizedError: if the credentials are invalid.
 
         Returns:
             Token: the issued access and refresh tokens.
         """
 
         settings = get_settings()
-        user = User.get_by(session, "username", data.username)
+        user = UserRepository(session).get_by("username", data.username)
 
         # verify user password
         if not user or not verify_password(data.password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Identifiants incorrects",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise UnauthorizedError("Identifiants incorrects")
 
         access_token = create_token(
             subject=str(user.id),
@@ -119,7 +112,7 @@ class TokenService:
             refresh_token (str): the refresh token to exchange.
 
         Raises:
-            HTTPException: if the refresh token is invalid, expired, or not of type "refresh".
+            UnauthorizedError: if the refresh token is invalid, expired, or not of type "refresh".
 
         Returns:
             Token: the newly issued access and refresh tokens.
@@ -129,10 +122,7 @@ class TokenService:
         payload = decode_token(refresh_token)
 
         if not payload or payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token invalide",
-            )
+            raise UnauthorizedError("Refresh token invalide")
 
         user_id: str = payload.get("sub", "")
 

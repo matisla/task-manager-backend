@@ -1,37 +1,21 @@
 from core.repository import DefaultRepository
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from .models import User
 
 
-class UserRepository(DefaultRepository):
+class UserRepository(DefaultRepository[User]):
     """
-    Repository of the model User, used to interface the DB.
+    Repository for the User model, adds lookup by username/email.
     """
 
-    model: User
-
-    def __init__(self, db: Session):
-        self.db = db
-
-    def create(self, *args, **kwargs):
-
-        user = User(*args, **kwargs)
-
-        # publish to database
-
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-
-        return user
+    model = User
 
     def get_by(self, attribute: str, value: str) -> User | None:
         """
         Get the user by an attribute.
 
         Args:
-            session (Session): session used to access the database.
             attribute (str): attribute to use to select the User, either "username" or "email".
             value (str): value to use to select the User.
 
