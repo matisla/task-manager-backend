@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
-from core.mixins import IDMixin, TimestampMixin
 from sqlmodel import Field, Relationship
+
+from app.core.mixins import IDMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from tasks.models import Task

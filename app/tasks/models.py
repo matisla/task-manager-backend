@@ -3,11 +3,12 @@ from datetime import UTC, datetime
 from enum import Enum, StrEnum
 from typing import Optional
 
-from auth.models import User
-from core.mixins import IDMixin
 from dateutil.rrule import rrulestr
 from pydantic import model_validator, validator
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.auth.models import User
+from app.core.mixins import IDMixin
 
 
 class Status(StrEnum):
@@ -134,7 +135,6 @@ class Routine(SQLModel, table=True):
         """
 
         if self.recurrency_type == RecurrencyType.FIXED_SCHEDULE:
-
             if not self.recurrency_rule or not self.start_date:
                 raise ValueError(
                     "recurrence_rule et start_date sont requis pour une routine "
@@ -142,12 +142,10 @@ class Routine(SQLModel, table=True):
                 )
             if self.interval_days is not None:
                 raise ValueError(
-                    "interval_days ne doit pas être défini pour une routine "
-                    "de type FIXED_SCHEDULE"
+                    "interval_days ne doit pas être défini pour une routine de type FIXED_SCHEDULE"
                 )
 
         elif self.recurrency_type == RecurrencyType.AFTER_COMPLETED:
-
             if self.interval_days is None:
                 raise ValueError(
                     "interval_days est requis pour une routine de type AFTER_COMPLETION"

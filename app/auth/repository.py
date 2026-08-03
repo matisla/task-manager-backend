@@ -1,5 +1,6 @@
-from core.repository import DefaultRepository
 from sqlmodel import select
+
+from app.core.repository import DefaultRepository
 
 from .models import User
 

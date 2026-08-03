@@ -1,12 +1,13 @@
+import logging
 from contextlib import asynccontextmanager
 
-from api.router import api_router
-from config import Environment, get_settings
-from config.core import Settings
-from core.exceptions import AppError, app_error_handler
-from db.session import create_db_engine, create_session_factory
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.router import api_router
+from app.config.core import Environment, Settings, get_settings
+from app.core.exceptions import AppError, app_error_handler
+from app.db.session import create_db_engine, create_session_factory
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -16,7 +17,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
 
-        engine = create_db_engine(settings_.db.connexion_url)
+        engine = create_db_engine(
+            settings_.db.connexion_url,
+            settings_.db.ECHO,
+        )
 
         # fail-fast check for database connexion
         async with engine.connect():
@@ -48,4 +52,3 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     return app
-

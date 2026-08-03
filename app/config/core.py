@@ -3,11 +3,12 @@ from enum import StrEnum
 from functools import cache
 from pathlib import Path
 
-from auth.settings import AuthSettings
-from db.settings import DatabaseSettings
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.auth.settings import AuthSettings
+from app.db.settings import DatabaseSettings
 
 from .logging import LoggingSettings
 
@@ -84,7 +85,6 @@ def get_settings(filename: str | Path | None = None) -> Settings:
     settings = None
 
     if filename is not None:
-
         if not Path(filename).exists():
             raise FileNotFoundError(f"environment file does not exist '{filename}'.")
 

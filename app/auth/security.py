@@ -1,9 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
 import jwt
-from config import get_settings
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
+
+from app.config.core import get_settings
 
 # Robust hashing with Argon2
 password_hash = PasswordHash((Argon2Hasher(),))

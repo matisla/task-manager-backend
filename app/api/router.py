@@ -1,7 +1,8 @@
-from auth.router import auth_router, user_router
-from core.router import core_router
 from fastapi.routing import APIRouter
-from tasks.router import tasks_router
+
+from app.auth.router import auth_router, user_router
+from app.core.router import core_router
+from app.tasks.router import tasks_router
 
 api_router = APIRouter()
 

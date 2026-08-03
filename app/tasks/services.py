@@ -2,9 +2,10 @@ import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from auth.models import User
-from core.exceptions import ConflictError, NotFoundError
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.auth.models import User
+from app.core.exceptions import ConflictError, NotFoundError
 
 from .filters import TaskFilter
 from .models import Status, Task

@@ -2,9 +2,10 @@ import logging
 import uuid
 from typing import Annotated
 
-from auth.deps import currentUserDep
-from db.deps import SessionDep
 from fastapi import APIRouter, Form, Query, Response, status
+
+from app.auth.deps import currentUserDep
+from app.db.deps import SessionDep
 
 from .filters import TaskFilter
 from .models import Status

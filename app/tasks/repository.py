@@ -1,4 +1,4 @@
-from core.repository import DefaultRepository
+from app.core.repository import DefaultRepository
 
 from .models import Task
 

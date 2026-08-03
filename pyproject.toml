@@ -23,7 +23,6 @@ dependencies = [
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
-extraPaths = ["app"]
 
 [dependency-groups]
 dev = ["black>=26.5.1", "pip>=26.1.2", "ruff>=0.16.0"]

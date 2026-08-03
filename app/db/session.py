@@ -14,7 +14,7 @@ NAMING_CONVENTION = {
 SQLModel.metadata.naming_convention = NAMING_CONVENTION
 
 
-def create_db_engine(database_url: DatabaseUrl):
+def create_db_engine(database_url: DatabaseUrl, echo: bool = False):
     """create the database engine based on `database_url`"""
     return create_async_engine(database_url, pool_pre_ping=True)
 

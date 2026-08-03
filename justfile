@@ -1,7 +1,9 @@
 clean:
     find . -type d -name "__pycache__" -exec rm -rf {} +
     find . -type f -name "*.pyc" -delete
-    rm -f tests/database.db tests/debug.log
+
+start:
+    docker compose up -d
 
 test *args:
     uv run pytest {{ args }}
@@ -12,15 +14,6 @@ lint:
 format:
     uv run ruff check --fix .
     uv run ruff format .
-
-start:
-    docker compose up --build -d
-
-log:
-    docker compose logs app
-
-build:
-    docker compose build app
 
 makemigrations msg:
     uv run alembic revision --autogenerate -m {{ msg }}

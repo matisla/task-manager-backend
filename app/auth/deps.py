@@ -1,9 +1,10 @@
 import uuid
 from typing import Annotated
 
-from db.deps import SessionDep
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+
+from app.db.deps import SessionDep
 
 from .models import User
 from .repository import UserRepository
