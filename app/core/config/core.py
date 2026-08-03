@@ -1,8 +1,8 @@
-import logging
 from enum import StrEnum
 from functools import cache
 from pathlib import Path
 
+import structlog
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -63,14 +63,14 @@ def get_settings(filename: str | Path | None = None) -> Settings:
         if not Path(filename).exists():
             raise FileNotFoundError(f"environment file does not exist '{filename}'.")
 
-        load_dotenv(filename)
-
+    load_dotenv(filename)
     settings = Settings()
 
     settings.log.configure()
+    settings.log.configure_logging()
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Settings loaded from {filename or 'default'}")
+    logger = structlog.get_logger(__name__)
+    logger.debug("logging_configuration_completed", {"filename": filename or "default"})
 
     return settings
 

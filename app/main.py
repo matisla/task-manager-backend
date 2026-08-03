@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import Environment, Settings, get_settings
 from app.core.exceptions import AppError, app_error_handler
+from app.core.middlewares import RequestContextMiddleware
 from app.db.session import create_db_engine, create_session_factory
 
 
@@ -54,7 +55,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     app.add_exception_handler(AppError, app_error_handler)
+
     app.add_middleware(CORSMiddleware, **settings_.cors.allows)
+    app.add_middleware(RequestContextMiddleware)
 
     app.include_router(api_router, prefix="/api")
 

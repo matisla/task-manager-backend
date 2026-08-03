@@ -3,6 +3,7 @@ from enum import IntEnum
 from logging.config import dictConfig
 from pathlib import Path
 
+import structlog
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,3 +58,18 @@ class LoggingSettings(BaseSettings):
         root_logger = logging.getLogger()
         root_logger.setLevel(self.LEVEL)
         root_logger.debug(f"Logging level set to {self.LEVEL}")
+
+    def configure_logging(self):
+        """
+        Initialize the logging for structlog
+        """
+
+        structlog.configure(
+            processors=[
+                structlog.contextvars.merge_contextvars,
+                structlog.stdlib.add_log_level,
+                structlog.stdlib.add_logger_name,
+                structlog.processors.TimeStamper(fmt="iso"),
+                structlog.processors.JSONRenderer(),
+            ],
+        )
