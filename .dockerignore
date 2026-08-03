@@ -11,6 +11,6 @@ htmlcov/
 docs/
 reports/
 scripts/
-.env
+.env*
 tests/
 tests/database.db

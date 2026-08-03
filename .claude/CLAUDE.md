@@ -14,56 +14,37 @@ Ce fichier fournit des instructions pour Claude Code (claude.ai/code) lorsqu'il 
 Application backend construite avec Python et FastAPI, devant suivre les standards moderne, 
 afin d'apprendre à développer des projets future sur cette même base technique. 
 
+## Objectifs
+
+Cette application devra être robuste, maintenable et scalable, dans le but de servir de
+référence et pouvoir être mise en production sans gros changement dans le code.
+
 ## Stack technique
 
 - Langage: Python 3.14
 - Framework: FastAPI
 - Serveur ASGI: Uvicorn
 - Gestion des dépendances: uv
-- Base de données: SQLite pour les tests, PostreSQL pour l'environement de dev et en production.
+- Base de données: PostreSQL avec asyncpg
 - Alembic: pour les migrations
 - ORM / Driver: SQLModel
 - Validation: Pydantic
 - Gestion des paramètres: Pydantic settings
-- Linter: ruff
-- Formatter: black, isort
+- Linter: ruff check
+- Formatter: ruff format, isort
 
 ## Structure du projet
 
-- Pour chaque domaine fonctionnel on crée un dossier dans `app/` (placeholder: <feature>).
+- Pour chaque domaine fonctionnel a sont module dans `app/`.
+- On utilise la séparation le domaine en sous fichier:
+    - models: pour la base de données
+    - repository: pour les transactions avec la base de données
+    - services: contient la logique métier
+    - router: le routing du domaine 
+    - schemas: les schemas pour la validation de données entrantes et sortantes
 - Les fichiers seront créé uniquement si necessaire (schemas.py, models.py, etc.)
-- Il existe en supplément les dossiers `config` pour la configuration.
-
-```
-app/
-|---- <feature>          # separation for entities: auth, tasks, etc. 
-      |---- __init__.py
-      |---- schemas.py
-      |---- models.py
-      |---- router.py
-      |---- services.py
-      |---- ...
-|---- config # 
-      |---- __init__.py
-      |---- core.py      # main Settings class
-      |---- logging.py   # schemas and config for logging
-      |---- database.py  # schemas and config for database 
-      |---- ...
-|---- __init__.py
-|---- database.py   # generator for session and engine
-|---- main.py       # app builder
-|---- asgi.py       # entrypoint for uvicorn
-tests/
-|---- <feature>     # contains tests for app/<feature>
-|---- ...           # contains conftest.py and more
-
-scripts/            # contains scripts if needed
-Dockerfile          # used to build app into container
-docker-compose.yaml # docker environment to start app in dev mode
-pyproject.yaml      # project file used via uv
-logging.yaml        # logging configuration for logging module
-.env                # env configuration for app container used in development (not commited)
-```
+- Ce qui est commun aux domaines se retrouve dans `app/core`. 
+- Les settings sont géré dans `config` appartenant au domaine `core`
 
 ## Commandes Courantes
 
@@ -91,8 +72,8 @@ uv run alembic -m "..."
 
 - Typage explicite obligatoire (type hints python) sur toutes les functions publiques.
 - Utiliser les modèles Pydantic pour valider les entrées et sorties des endpoints.
-- Un routeur FastAPI (APIRouter) par domaine functionnel, monté dans `create_app` présent dans `main.py`.
 - Docstrings en anglais et obligatoire pour les classes et fonctions au format Google Style.
+- Mettre à jour la Docstrings, si et seulement si la logique change.
 - Les erreurs métier doivent être gérées via des exceptions FastAPI (`HTTPException`) ou des gestionnaires d'exceptions dédiés.
 
 ## Tests
@@ -100,12 +81,8 @@ uv run alembic -m "..."
 ### Stack technique
 
 - Framework: pytest
-- Données factice: Faker 
+- Données factice: Faker, factory_boy
 - Requetes: httpx
-
-### Autres consignes
-
-- Base de données tests/database.db, à supprimer si nécessaire AVANT les tests
 
 ## Migrations (Alembic)
 

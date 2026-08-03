@@ -1,17 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rm -f tests/database.db)",
-      "Bash(uv run *)",
+      "Bash(uv run pytest *)",
       "Bash(uvx ruff *)",
       "Bash(uvx black *)",
       "Bash(uvx isort *)",
-      "Bash(docker port *)",
       "Bash(docker compose *)",
       "Bash(uv export *)",
-      "Bash(lsattr alembic/versions/f132464c5630_initial_migration.py)",
-      "Edit(/docs/brainstorms/**)",
-      "Edit(/docs/specs/**)"
+      "Edit(docs/brainstorms/*.md)",
+      "Edit(docs/specs/*.md)",
     ]
   }
 }
