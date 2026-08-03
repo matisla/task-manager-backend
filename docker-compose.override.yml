@@ -1,0 +1,17 @@
+services:
+  api:
+    container_name: api
+    build:
+      context: .
+      target: builder
+    env_file: .env.dev
+    command: uv run uvicorn asgi:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+    - ./app:/app/app
+    ports:
+      -"8000:8000"
+    networks:
+      - task-manager
+    depends_on:
+      db:
+        condition: service_healthy

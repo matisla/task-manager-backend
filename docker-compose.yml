@@ -1,23 +1,6 @@
 services:
-  app:
-    build: .
-    container_name: fastapi_app
-    ports:
-      - 8000:8000
-    environment:
-      DATABASE_URL: ""
-      DATABASE_TYPE: postgresql
-      DATABASE_NAME: tasksmanager
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres_pwd
-      LOG_LEVEL: DEBUG
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./app:/code/app
-    networks:
-      - task-manager
+
+  # database
   db:
     image: postgres:latest
     restart: always
@@ -38,6 +21,7 @@ services:
     networks:
       - task-manager
 
+  # database admin page
   adminer:
     image: adminer
     restart: always
