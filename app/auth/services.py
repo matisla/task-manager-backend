@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.config.core import get_settings
+from app.core.config import get_settings
 from app.core.exceptions import BadRequestError, UnauthorizedError
 
 from .models import User

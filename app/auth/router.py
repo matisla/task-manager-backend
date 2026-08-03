@@ -57,7 +57,7 @@ async def register(
     session: SessionDep,
 ):
     """
-    Create a new user and return token.
+    Create a new user.
 
     Args:
         user_form (UserCreate): data to use to create the user.

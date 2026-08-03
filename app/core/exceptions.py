@@ -11,6 +11,12 @@ class AppError(Exception):
     detail: str = "Internal server error"
 
     def __init__(self, detail: str | None = None):
+        """
+        Initialize the error, optionally overriding the class-level `detail`.
+
+        Args:
+            detail (str | None): message to use instead of the class default.
+        """
         self.detail = detail or self.detail
         super().__init__(self.detail)
 
@@ -52,6 +58,16 @@ class UnauthorizedError(AppError):
 
 
 async def app_error_handler(request: Request, exc: AppError):
+    """
+    Convert an AppError into a JSON error response.
+
+    Args:
+        request (Request): the incoming request (required by FastAPI's handler signature).
+        exc (AppError): the business error being handled.
+
+    Returns:
+        JSONResponse: the HTTP response translated from `exc`.
+    """
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.__class__.__name__, "detail": exc.detail},

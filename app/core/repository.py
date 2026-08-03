@@ -14,6 +14,12 @@ class DefaultRepository[ModelType: SQLModel]:
     model: type[ModelType]
 
     def __init__(self, session: AsyncSession):
+        """
+        Initialize the repository with the session used for database access.
+
+        Args:
+            session (AsyncSession): session used to access the database.
+        """
         self.session = session
 
     async def get(self, primary_key: uuid.UUID) -> ModelType | None:

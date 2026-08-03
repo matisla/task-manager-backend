@@ -22,8 +22,8 @@ async def homepage():
 @core_router.get("/health")
 async def health(session: SessionDep):
     """
-    Infra healthcheck endpoint: verifies the database is reachable.
-    Not versioned, not part of the client-facing API contract.
+    Healthcheck endpoint: verifies the database is reachable.
+    Mounted under /api, alongside the rest of the client-facing API.
 
     Args:
         session (Session): session used to access the database.

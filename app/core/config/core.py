@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.auth.settings import AuthSettings
 from app.db.settings import DatabaseSettings
 
+from .cors import CORSSettings
 from .logging import LoggingSettings
 
 
@@ -21,32 +22,6 @@ class Environment(StrEnum):
     DEV = "development"
     PROD = "production"
     TEST = "test"
-
-
-class CORSSettings(BaseSettings):
-    """
-    CORS settings
-    """
-
-    ALLOW_ORIGINS: list[str] = Field(default=["http://localhost", "http://localhost:8000"])
-    ALLOW_CREDENTIALS: bool = Field(default=True)
-    ALLOW_METHODS: list[str] = Field(default=["*"])
-    ALLOW_HEADERS: list[str] = Field(default=["*"])
-
-    model_config = SettingsConfigDict(
-        env_prefix="CORS_",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-    @property
-    def allows(self):
-        return {
-            "allow_origins": self.ALLOW_ORIGINS,
-            "allow_credentials": self.ALLOW_CREDENTIALS,
-            "allow_methods": self.ALLOW_METHODS,
-            "allow_headers": self.ALLOW_HEADERS,
-        }
 
 
 class Settings(BaseSettings):

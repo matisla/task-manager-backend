@@ -142,7 +142,6 @@ class TaskService:
         """
 
         match task.status:
-
             case Status.BACKLOG:
                 await TaskRepository(session).delete(task)
                 return None

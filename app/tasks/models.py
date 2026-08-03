@@ -80,7 +80,7 @@ class RecurrencyType(str, Enum):
 
 class Routine(SQLModel, table=True):
     """
-    Routine object, representing an action to proceeded with a cyclic repetition.
+    Routine object, representing an action performed on a cyclic repetition.
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -110,14 +110,16 @@ class Routine(SQLModel, table=True):
     @validator("recurrency_rule")
     def _rrule_check(cls, rule: str | None) -> str | None:
         """
-        Validate the recurrency rules based RULE (RFC 5545)
+        Validate `rule` as an RFC 5545 RRULE string.
 
         Args:
-            rule (str | None): rule to validate, if None skip
+            rule (str | None): the rule to validate; skipped if None.
 
-        Return:
-            (str | None): the rule validated
+        Raises:
+            ValueError: if `rule` is not a valid RRULE string.
 
+        Returns:
+            str | None: the validated rule.
         """
         try:
             rrulestr(rule) if rule is not None else None
@@ -129,9 +131,13 @@ class Routine(SQLModel, table=True):
     @model_validator(mode="after")
     def _check_recurrence_config(self) -> Routine:
         """
-        Validate configuration
+        Validate that recurrence fields match the selected `recurrency_type`.
 
-        Args:
+        Raises:
+            ValueError: if required fields are missing or forbidden fields are set for the type.
+
+        Returns:
+            Routine: self, unchanged.
         """
 
         if self.recurrency_type == RecurrencyType.FIXED_SCHEDULE:

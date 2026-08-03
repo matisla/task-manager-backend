@@ -1,21 +1,32 @@
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
-from app.config.core import Environment, Settings, get_settings
+from app.core.config import Environment, Settings, get_settings
 from app.core.exceptions import AppError, app_error_handler
 from app.db.session import create_db_engine, create_session_factory
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    """
+    Build and configure the FastAPI application.
+
+    Args:
+        settings (Settings | None): settings to use; defaults to `get_settings()`.
+
+    Returns:
+        FastAPI: the configured application.
+    """
 
     settings_: Settings = settings or get_settings()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        """
+        Open the database engine on startup and dispose of it on shutdown.
+        """
 
         engine = create_db_engine(
             settings_.db.connexion_url,
@@ -49,6 +60,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health", tags=["infra"])
     async def health():
+        """
+        Liveness check, without touching the database. Not versioned, not part of the
+        client-facing API contract (used by the Docker healthcheck).
+        """
         return {"status": "ok"}
 
     return app
