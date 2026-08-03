@@ -16,7 +16,7 @@ class DefaultRepository[ModelType: SQLModel]:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    def get(self, primary_key: uuid.UUID) -> ModelType | None:
+    async def get(self, primary_key: uuid.UUID) -> ModelType | None:
         """
         Get an instance by its primary key.
 
@@ -27,9 +27,9 @@ class DefaultRepository[ModelType: SQLModel]:
             ModelType | None: the instance, or None if not found.
         """
 
-        return self.session.get(self.model, primary_key)
+        return await self.session.get(self.model, primary_key)
 
-    def list(self, filters: BaseModel | None = None) -> Sequence[ModelType]:
+    async def list(self, filters: BaseModel | None = None) -> Sequence[ModelType]:
         """
         List instances, optionally filtered by equality on the given fields.
 
@@ -50,9 +50,10 @@ class DefaultRepository[ModelType: SQLModel]:
                 if column is not None:
                     statement = statement.where(column == value)
 
-        return self.session.exec(statement).all()
+        result = await self.session.exec(statement)
+        return result.all()
 
-    def create(self, **kwargs) -> ModelType:
+    async def create(self, **kwargs) -> ModelType:
         """
         Create and persist a new instance.
 
@@ -66,12 +67,12 @@ class DefaultRepository[ModelType: SQLModel]:
         instance = self.model(**kwargs)
 
         self.session.add(instance)
-        self.session.commit()
-        self.session.refresh(instance)
+        await self.session.commit()
+        await self.session.refresh(instance)
 
         return instance
 
-    def update(self, instance: ModelType, **kwargs) -> ModelType:
+    async def update(self, instance: ModelType, **kwargs) -> ModelType:
         """
         Update and persist fields on an existing instance.
 
@@ -87,12 +88,12 @@ class DefaultRepository[ModelType: SQLModel]:
             setattr(instance, field, value)
 
         self.session.add(instance)
-        self.session.commit()
-        self.session.refresh(instance)
+        await self.session.commit()
+        await self.session.refresh(instance)
 
         return instance
 
-    def delete(self, instance: ModelType) -> None:
+    async def delete(self, instance: ModelType) -> None:
         """
         Delete an instance.
 
@@ -100,5 +101,5 @@ class DefaultRepository[ModelType: SQLModel]:
             instance (ModelType): the instance to delete.
         """
 
-        self.session.delete(instance)
-        self.session.commit()
+        await self.session.delete(instance)
+        await self.session.commit()

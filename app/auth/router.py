@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from database import SessionDep
+from db.deps import SessionDep
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -28,7 +28,7 @@ async def login(
         Token: the issued access and refresh tokens.
     """
 
-    return TokenService.login(session, form_data)
+    return await TokenService.login(session, form_data)
 
 
 @auth_router.post("/refresh", response_model=Token)
@@ -43,7 +43,7 @@ async def refresh_token(refresh_token: str):
         Token: the newly issued access and refresh tokens.
     """
 
-    return TokenService.refresh_token(refresh_token)
+    return TokenService.refresh_token(refresh_token)  # sync: no DB/session access
 
 
 @auth_router.post(
@@ -66,7 +66,7 @@ async def register(
         UserResponse: the created user.
     """
 
-    return UserService.create(session, user_form)
+    return await UserService.create(session, user_form)
 
 
 user_router = APIRouter(prefix="/users", tags=["Users"])

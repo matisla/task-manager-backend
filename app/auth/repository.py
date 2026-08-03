@@ -11,7 +11,7 @@ class UserRepository(DefaultRepository[User]):
 
     model = User
 
-    def get_by(self, attribute: str, value: str) -> User | None:
+    async def get_by(self, attribute: str, value: str) -> User | None:
         """
         Get the user by an attribute.
 
@@ -36,6 +36,7 @@ class UserRepository(DefaultRepository[User]):
             case _:
                 raise AttributeError("attribute shall be 'username' or 'email'")
 
-        user: User | None = self.db.exec(statement).first()
+        result = await self.session.exec(statement)
+        user: User | None = result.first()
 
         return user

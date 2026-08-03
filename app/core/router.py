@@ -1,4 +1,4 @@
-from database import SessionDep
+from db.deps import SessionDep
 from fastapi import APIRouter
 from sqlmodel import select
 
@@ -31,6 +31,6 @@ async def health(session: SessionDep):
         dict: the health status.
     """
 
-    session.exec(select(1))
+    await session.exec(select(1))
 
     return {"status": "ok"}

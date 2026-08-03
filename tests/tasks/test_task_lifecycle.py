@@ -3,8 +3,8 @@ import uuid
 
 import pytest
 from auth.models import User
-from fastapi.testclient import TestClient
-from sqlmodel import Session
+from httpx2 import AsyncClient
+from sqlmodel.ext.asyncio.session import AsyncSession
 from tasks.models import Status, Task
 from tasks.services import ALLOWED_TRANSITIONS
 
@@ -26,20 +26,20 @@ INVALID_TRANSITIONS = [
 
 
 class TestTaskLifecycle:
-    def _create_task(
-        self, session: Session, user_id: uuid.UUID, status: Status = Status.BACKLOG
+    async def _create_task(
+        self, session: AsyncSession, user_id: uuid.UUID, status: Status = Status.BACKLOG
     ) -> Task:
         task = TaskFactory.create(user_id=user_id, status=status)
         session.add(task)
-        session.commit()
-        session.refresh(task)
+        await session.commit()
+        await session.refresh(task)
         return task
 
     @pytest.mark.parametrize("source,target", VALID_TRANSITIONS)
-    def test_valid_transition(
+    async def test_valid_transition(
         self,
-        client: TestClient,
-        session: Session,
+        client: AsyncClient,
+        session: AsyncSession,
         current_user: User,
         source: Status,
         target: Status,
@@ -50,17 +50,17 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=source)
+        task = await self._create_task(session, current_user.id, status=source)
 
-        response = client.post(f"/tasks/{task.id}/{target.value}")
+        response = await client.post(f"/api/tasks/{task.id}/{target.value}")
         assert response.status_code == 200
         assert response.json()["status"] == target.value
 
     @pytest.mark.parametrize("source,target", INVALID_TRANSITIONS)
-    def test_invalid_transition(
+    async def test_invalid_transition(
         self,
-        client: TestClient,
-        session: Session,
+        client: AsyncClient,
+        session: AsyncSession,
         current_user: User,
         source: Status,
         target: Status,
@@ -71,13 +71,13 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=source)
+        task = await self._create_task(session, current_user.id, status=source)
 
-        response = client.post(f"/tasks/{task.id}/{target.value}")
+        response = await client.post(f"/api/tasks/{task.id}/{target.value}")
         assert response.status_code == 409
 
-    def test_transition_to_done_sets_completed_at(
-        self, client: TestClient, session: Session, current_user: User
+    async def test_transition_to_done_sets_completed_at(
+        self, client: AsyncClient, session: AsyncSession, current_user: User
     ):
         """
         IN_PROGRESS -> DONE should set completed_at.
@@ -85,18 +85,19 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=Status.IN_PROGRESS)
+        task = await self._create_task(session, current_user.id, status=Status.IN_PROGRESS)
+        task_id = task.id
         assert task.completed_at is None
 
-        response = client.post(f"/tasks/{task.id}/{Status.DONE.value}")
+        response = await client.post(f"/api/tasks/{task_id}/{Status.DONE.value}")
         assert response.status_code == 200
 
         session.expire_all()
-        db_task = session.get(Task, task.id)
+        db_task = await session.get(Task, task_id)
         assert db_task.completed_at is not None
 
-    def test_other_transitions_do_not_set_completed_at(
-        self, client: TestClient, session: Session, current_user: User
+    async def test_other_transitions_do_not_set_completed_at(
+        self, client: AsyncClient, session: AsyncSession, current_user: User
     ):
         """
         Any transition other than X -> DONE should leave completed_at untouched (None).
@@ -104,20 +105,21 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=Status.BACKLOG)
+        task = await self._create_task(session, current_user.id, status=Status.BACKLOG)
+        task_id = task.id
 
-        response = client.post(f"/tasks/{task.id}/{Status.PLANNED.value}")
+        response = await client.post(f"/api/tasks/{task_id}/{Status.PLANNED.value}")
         assert response.status_code == 200
 
         session.expire_all()
-        db_task = session.get(Task, task.id)
+        db_task = await session.get(Task, task_id)
         assert db_task.completed_at is None
 
     @pytest.mark.parametrize("source,target", VALID_TRANSITIONS)
-    def test_transition_does_not_set_updated_at(
+    async def test_transition_does_not_set_updated_at(
         self,
-        client: TestClient,
-        session: Session,
+        client: AsyncClient,
+        session: AsyncSession,
         current_user: User,
         source: Status,
         target: Status,
@@ -128,14 +130,14 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=source)
+        task = await self._create_task(session, current_user.id, status=source)
 
-        response = client.post(f"/tasks/{task.id}/{target.value}")
+        response = await client.post(f"/api/tasks/{task.id}/{target.value}")
         assert response.status_code == 200
         assert response.json()["updated_at"] is None
 
-    def test_delete_backlog_task_is_physical(
-        self, client: TestClient, session: Session, current_user: User
+    async def test_delete_backlog_task_is_physical(
+        self, client: AsyncClient, session: AsyncSession, current_user: User
     ):
         """
         DELETE on a BACKLOG task removes the row.
@@ -143,18 +145,18 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=Status.BACKLOG)
+        task = await self._create_task(session, current_user.id, status=Status.BACKLOG)
         task_id = task.id
 
-        response = client.delete(f"/tasks/{task_id}")
+        response = await client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 204
 
         session.expire_all()
-        assert session.get(Task, task_id) is None
+        assert await session.get(Task, task_id) is None
 
     @pytest.mark.parametrize("source", [Status.DONE, Status.CANCELLED])
-    def test_delete_done_or_cancelled_task_archives_it(
-        self, client: TestClient, session: Session, current_user: User, source: Status
+    async def test_delete_done_or_cancelled_task_archives_it(
+        self, client: AsyncClient, session: AsyncSession, current_user: User, source: Status
     ):
         """
         DELETE on a DONE/CANCELLED task is an implicit archiving, the row persists.
@@ -162,18 +164,19 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=source)
+        task = await self._create_task(session, current_user.id, status=source)
+        task_id = task.id
 
-        response = client.delete(f"/tasks/{task.id}")
+        response = await client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 204
 
         session.expire_all()
-        db_task = session.get(Task, task.id)
+        db_task = await session.get(Task, task_id)
         assert db_task is not None
         assert db_task.status == Status.ARCHIVED
 
-    def test_delete_archived_task_is_idempotent(
-        self, client: TestClient, session: Session, current_user: User
+    async def test_delete_archived_task_is_idempotent(
+        self, client: AsyncClient, session: AsyncSession, current_user: User
     ):
         """
         DELETE on an already ARCHIVED task is a no-op returning 204.
@@ -181,13 +184,14 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=Status.ARCHIVED)
+        task = await self._create_task(session, current_user.id, status=Status.ARCHIVED)
+        task_id = task.id
 
-        response = client.delete(f"/tasks/{task.id}")
+        response = await client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 204
 
         session.expire_all()
-        db_task = session.get(Task, task.id)
+        db_task = await session.get(Task, task_id)
         assert db_task is not None
         assert db_task.status == Status.ARCHIVED
 
@@ -195,8 +199,8 @@ class TestTaskLifecycle:
         "source",
         [Status.PLANNED, Status.IN_PROGRESS, Status.PAUSED, Status.WAITING],
     )
-    def test_delete_other_status_is_rejected(
-        self, client: TestClient, session: Session, current_user: User, source: Status
+    async def test_delete_other_status_is_rejected(
+        self, client: AsyncClient, session: AsyncSession, current_user: User, source: Status
     ):
         """
         DELETE on a task in any other status is rejected with 409, no change in database.
@@ -204,58 +208,65 @@ class TestTaskLifecycle:
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, current_user.id, status=source)
+        task = await self._create_task(session, current_user.id, status=source)
+        task_id = task.id
 
-        response = client.delete(f"/tasks/{task.id}")
+        response = await client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 409
 
         session.expire_all()
-        db_task = session.get(Task, task.id)
+        db_task = await session.get(Task, task_id)
         assert db_task is not None
         assert db_task.status == source
 
-    def test_get_other_user_task_returns_404(self, client: TestClient, session: Session):
+    async def test_get_other_user_task_returns_404(
+        self, client: AsyncClient, session: AsyncSession
+    ):
         """
         GET on a task owned by another user returns 404.
         """
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
+        task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
-        response = client.get(f"/tasks/{task.id}")
+        response = await client.get(f"/api/tasks/{task.id}")
         assert response.status_code == 404
 
-    def test_delete_other_user_task_returns_404(self, client: TestClient, session: Session):
+    async def test_delete_other_user_task_returns_404(
+        self, client: AsyncClient, session: AsyncSession
+    ):
         """
         DELETE on a task owned by another user returns 404.
         """
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
+        task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
-        response = client.delete(f"/tasks/{task.id}")
+        response = await client.delete(f"/api/tasks/{task.id}")
         assert response.status_code == 404
 
-    def test_transition_other_user_task_returns_404(self, client: TestClient, session: Session):
+    async def test_transition_other_user_task_returns_404(
+        self, client: AsyncClient, session: AsyncSession
+    ):
         """
         POST .../{status} on a task owned by another user returns 404.
         """
 
         self.logger = logging.getLogger(__name__)
 
-        task = self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
+        task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
-        response = client.post(f"/tasks/{task.id}/{Status.PLANNED.value}")
+        response = await client.post(f"/api/tasks/{task.id}/{Status.PLANNED.value}")
         assert response.status_code == 404
 
-    def test_get_unknown_task_returns_404(self, client: TestClient):
+    async def test_get_unknown_task_returns_404(self, client: AsyncClient):
         """
         GET on a non-existent task id returns 404.
         """
 
         self.logger = logging.getLogger(__name__)
 
-        response = client.get(f"/tasks/{uuid.uuid4()}")
+        response = await client.get(f"/api/tasks/{uuid.uuid4()}")
         assert response.status_code == 404

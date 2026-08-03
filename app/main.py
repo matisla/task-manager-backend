@@ -1,13 +1,12 @@
 from contextlib import asynccontextmanager
 
-import uvicorn
+from api.router import api_router
 from config import Environment, get_settings
 from config.core import Settings
 from core.exceptions import AppError, app_error_handler
 from db.session import create_db_engine, create_session_factory
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from router import api_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -50,8 +49,3 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     return app
 
-
-app = create_app()
-
-if __name__ == "__main__":
-    uvicorn.run("asgi:app", host="0.0.0.0", port=8000)

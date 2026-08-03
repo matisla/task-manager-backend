@@ -13,7 +13,8 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "sqlmodel>=0.0.39",
     "uvicorn>=0.51.0",
-    "psycopg2-binary>=2.9.12",
+    "asyncpg>=0.30.0",
+    "aiosqlite>=0.21.0",
     "alembic>=1.18.5",
     "pyyaml>=6.0.3",
     "python-dotenv>=1.2.2",
@@ -39,6 +40,9 @@ test = [
 pythonpath = ["app"]
 addopts = ["-ras", "-vv", "--cov=app", "--cov-report=html"]
 log_level = "DEBUG"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 
 [tool.ruff]
 line-length = 100

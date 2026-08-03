@@ -2,8 +2,8 @@ import logging
 import uuid
 
 from auth.models import User
-from fastapi.testclient import TestClient
-from sqlmodel import Session
+from httpx2 import AsyncClient
+from sqlmodel.ext.asyncio.session import AsyncSession
 from tasks.models import Task
 
 from .factories import TaskFactory
@@ -11,7 +11,7 @@ from .factories import TaskFactory
 
 class TestTask:
 
-    def test_create_task(self, client: TestClient, session: Session):
+    async def test_create_task(self, client: AsyncClient, session: AsyncSession):
         """
         Test the basic creation of a task
         """
@@ -22,19 +22,19 @@ class TestTask:
             "title": "first job",
             "description": "code the app",
         }
-        response = client.post("/tasks/", data=data)
+        response = await client.post("/api/tasks/", data=data)
         assert response.status_code == 201
 
         body = response.json()
         assert body["title"] == data["title"]
         assert body["description"] == data["description"]
 
-        db_task = session.get(Task, uuid.UUID(body["id"]))
+        db_task = await session.get(Task, uuid.UUID(body["id"]))
 
         assert db_task is not None
         assert db_task.title == data["title"]
 
-    def test_list_tasks(self, client: TestClient):
+    async def test_list_tasks(self, client: AsyncClient):
         """
         Test the listing of tasks
         """
@@ -45,18 +45,18 @@ class TestTask:
             "title": "task to list",
             "description": "should appear in the list",
         }
-        created = client.post("/tasks/", data=data)
+        created = await client.post("/api/tasks/", data=data)
         assert created.status_code == 201
         created_id = created.json()["id"]
 
-        response = client.get("/tasks/")
+        response = await client.get("/api/tasks/")
         assert response.status_code == 200
 
         tasks = response.json()
         assert any(task["id"] == created_id for task in tasks)
 
-    def test_list_tasks_with_factory(
-        self, client: TestClient, session: Session, current_user: User
+    async def test_list_tasks_with_factory(
+        self, client: AsyncClient, session: AsyncSession, current_user: User
     ):
         """
         Test listing tasks generated with factory_boy
@@ -66,9 +66,9 @@ class TestTask:
 
         tasks = TaskFactory.create_batch(3, user_id=current_user.id)
         session.add_all(tasks)
-        session.commit()
+        await session.commit()
 
-        response = client.get("/tasks/")
+        response = await client.get("/api/tasks/")
         assert response.status_code == 200
 
         body = response.json()
@@ -76,7 +76,7 @@ class TestTask:
 
         assert {str(task.id) for task in tasks}.issubset(returned_ids)
 
-    def test_delete_task(self, client: TestClient, session: Session):
+    async def test_delete_task(self, client: AsyncClient, session: AsyncSession):
 
         self.logger = logging.getLogger(__name__)
 
@@ -84,12 +84,12 @@ class TestTask:
             "title": "task to delete",
             "description": "will be removed",
         }
-        created = client.post("/tasks/", data=data)
+        created = await client.post("/api/tasks/", data=data)
         assert created.status_code == 201
         task_id = created.json()["id"]
 
-        response = client.delete(f"/tasks/{task_id}")
+        response = await client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 204
 
-        db_task = session.get(Task, uuid.UUID(task_id))
+        db_task = await session.get(Task, uuid.UUID(task_id))
         assert db_task is None

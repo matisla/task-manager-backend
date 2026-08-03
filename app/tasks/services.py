@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 
 from auth.models import User
 from core.exceptions import ConflictError, NotFoundError
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .filters import TaskFilter
 from .models import Status, Task
-from .repositories import TaskRepository
+from .repository import TaskRepository
 from .schemas import TaskCreate
 
 ALLOWED_TRANSITIONS: dict[Status, frozenset[Status]] = {
@@ -29,12 +29,12 @@ class TaskService:
     """
 
     @classmethod
-    def list(cls, session: Session, filters: TaskFilter, user: User) -> Sequence[Task]:
+    async def list(cls, session: AsyncSession, filters: TaskFilter, user: User) -> Sequence[Task]:
         """
         List tasks matching the given filters, scoped to the requesting user.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             filters (TaskFilter): equality filters requested by the client.
             user (User): the requesting user; forced as the owner filter.
 
@@ -43,15 +43,15 @@ class TaskService:
         """
 
         filters.user_id = user.id
-        return TaskRepository(session).list(filters)
+        return await TaskRepository(session).list(filters)
 
     @classmethod
-    def create(cls, session: Session, data: TaskCreate, user: User) -> Task:
+    async def create(cls, session: AsyncSession, data: TaskCreate, user: User) -> Task:
         """
         Create a new task owned by the given user.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             data (TaskCreate): data to use to create the task.
             user (User): the requesting user, set as the task owner.
 
@@ -59,7 +59,7 @@ class TaskService:
             Task: the created task.
         """
 
-        return TaskRepository(session).create(
+        return await TaskRepository(session).create(
             title=data.title,
             description=data.description or "",
             start_date=data.start_date,
@@ -69,12 +69,12 @@ class TaskService:
         )
 
     @classmethod
-    def get_owned_or_404(cls, session: Session, task_id: uuid.UUID, user: User) -> Task:
+    async def get_owned_or_404(cls, session: AsyncSession, task_id: uuid.UUID, user: User) -> Task:
         """
         Retrieve a task by id, scoped to its owner.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             task_id (uuid.UUID): id of the task to retrieve.
             user (User): the requesting user, expected to own the task.
 
@@ -86,7 +86,7 @@ class TaskService:
         """
 
         repository = TaskRepository(session)
-        task = repository.get(task_id)
+        task = await repository.get(task_id)
 
         if task is None or task.user_id != user.id:
             raise NotFoundError("Task not found")
@@ -94,12 +94,12 @@ class TaskService:
         return task
 
     @classmethod
-    def transition(cls, session: Session, task: Task, target: Status) -> Task:
+    async def transition(cls, session: AsyncSession, task: Task, target: Status) -> Task:
         """
         Move a task to a new status, validated against ALLOWED_TRANSITIONS.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             task (Task): task to transition.
             target (Status): the requested target status.
 
@@ -113,19 +113,14 @@ class TaskService:
         if target not in ALLOWED_TRANSITIONS[task.status]:
             raise ConflictError(f"Cannot transition task from {task.status} to {target}")
 
-        task.status = target
-
+        kwargs: dict = {"status": target}
         if target == Status.DONE:
-            task.completed_at = datetime.now(UTC)
+            kwargs["completed_at"] = datetime.now(UTC)
 
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-
-        return task
+        return await TaskRepository(session).update(task, **kwargs)
 
     @classmethod
-    def delete(cls, session: Session, task: Task) -> Task | None:
+    async def delete(cls, session: AsyncSession, task: Task) -> Task | None:
         """
         Apply the three-branch deletion rule.
 
@@ -135,7 +130,7 @@ class TaskService:
         - any other status: raises ConflictError 409.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             task (Task): task to delete.
 
         Raises:
@@ -148,19 +143,14 @@ class TaskService:
         match task.status:
 
             case Status.BACKLOG:
-                session.delete(task)
-                session.commit()
+                await TaskRepository(session).delete(task)
                 return None
 
             case Status.ARCHIVED:
                 return task
 
             case Status.DONE | Status.CANCELLED:
-                task.status = Status.ARCHIVED
-                session.add(task)
-                session.commit()
-                session.refresh(task)
-                return task
+                return await TaskRepository(session).update(task, status=Status.ARCHIVED)
 
             case _:
                 raise ConflictError(f"Cannot delete task with status {task.status}")

@@ -3,10 +3,10 @@ from datetime import UTC, datetime, timedelta
 from config import get_settings
 from core.exceptions import BadRequestError, UnauthorizedError
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .models import User
-from .repositories import UserRepository
+from .repository import UserRepository
 from .schemas import Token, UserCreate
 from .security import create_token, decode_token, get_password_hash, verify_password
 
@@ -17,12 +17,12 @@ class UserService:
     """
 
     @classmethod
-    def create(cls, session: Session, data: UserCreate) -> User:
+    async def create(cls, session: AsyncSession, data: UserCreate) -> User:
         """
         Create a User based on provided data.
 
         Args:
-            session (Session): session to communicate with the database.
+            session (AsyncSession): session to communicate with the database.
             data (UserCreate): data to use to create the user.
 
         Raises:
@@ -36,11 +36,11 @@ class UserService:
         repository = UserRepository(session)
 
         # Check if User is already existing
-        exist_user = repository.get_by("username", data.username)
+        exist_user = await repository.get_by("username", data.username)
         if exist_user:
             raise exception
 
-        exist_user = repository.get_by("email", data.email)
+        exist_user = await repository.get_by("email", data.email)
         if exist_user:
             raise exception
 
@@ -50,7 +50,7 @@ class UserService:
 
         # Create user
 
-        user = repository.create(
+        user = await repository.create(
             username=data.username,
             firstname=data.firstname,
             lastname=data.lastname,
@@ -68,12 +68,12 @@ class TokenService:
     """
 
     @classmethod
-    def login(cls, session: Session, data: OAuth2PasswordRequestForm) -> Token:
+    async def login(cls, session: AsyncSession, data: OAuth2PasswordRequestForm) -> Token:
         """
         Authenticate a user and issue a new access and refresh token pair.
 
         Args:
-            session (Session): session used to access the database.
+            session (AsyncSession): session used to access the database.
             data (OAuth2PasswordRequestForm): the submitted username and password.
 
         Raises:
@@ -84,7 +84,7 @@ class TokenService:
         """
 
         settings = get_settings()
-        user = UserRepository(session).get_by("username", data.username)
+        user = await UserRepository(session).get_by("username", data.username)
 
         # verify user password
         if not user or not verify_password(data.password, user.hashed_password):
@@ -107,6 +107,9 @@ class TokenService:
     def refresh_token(cls, refresh_token: str) -> Token:
         """
         Issue a new access and refresh token pair from a valid refresh token.
+
+        No database access is needed here (pure JWT decode/encode), so this method stays
+        synchronous.
 
         Args:
             refresh_token (str): the refresh token to exchange.

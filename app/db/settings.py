@@ -51,6 +51,6 @@ class DatabaseSettings(BaseSettings):
             return self.URL
 
         if self.TYPE == DBType.SQLITE:
-            return f"sqlite:///{self.FILENAME}"
+            return f"sqlite+aiosqlite:///{self.FILENAME}"
 
-        return f"{self.TYPE}://{self.USER}:{self.PASSWORD}@{self.SERVER}:{self.PORT}/{self.NAME}"
+        return f"postgresql+asyncpg://{self.USER}:{self.PASSWORD}@{self.SERVER}:{self.PORT}/{self.NAME}"

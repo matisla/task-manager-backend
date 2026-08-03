@@ -3,7 +3,7 @@ import uuid
 from typing import Annotated
 
 from auth.deps import currentUserDep
-from database import SessionDep
+from db.deps import SessionDep
 from fastapi import APIRouter, Form, Query, Response, status
 
 from .filters import TaskFilter
@@ -33,7 +33,7 @@ async def list_tasks(
         list[TaskRead]: the tasks owned by the user.
     """
 
-    return TaskService.list(session, filters, user)
+    return await TaskService.list(session, filters, user)
 
 
 @tasks_router.post(
@@ -62,7 +62,7 @@ async def create_task(
     logger = logging.getLogger(__name__)
     logger.debug(f"Try to create a new task: {data}")
 
-    return TaskService.create(session, data, user)
+    return await TaskService.create(session, data, user)
 
 
 @tasks_router.get(
@@ -86,7 +86,7 @@ async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: Session
     logger = logging.getLogger(__name__)
     logger.debug(f"Try to get task: {task_id}")
 
-    task = TaskService.get_owned_or_404(session, task_id, user)
+    task = await TaskService.get_owned_or_404(session, task_id, user)
 
     return task
 
@@ -114,8 +114,8 @@ async def delete_task(task_id: uuid.UUID, user: currentUserDep, session: Session
     logger = logging.getLogger(__name__)
     logger.debug(f"Try to delete a task: {task_id}")
 
-    task = TaskService.get_owned_or_404(session, task_id, user)
-    TaskService.delete(session, task)
+    task = await TaskService.get_owned_or_404(session, task_id, user)
+    await TaskService.delete(session, task)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -147,6 +147,6 @@ async def transition_task(
     logger = logging.getLogger(__name__)
     logger.debug(f"Try to transition task {task_id} to {target_status}")
 
-    task = TaskService.get_owned_or_404(session, task_id, user)
+    task = await TaskService.get_owned_or_404(session, task_id, user)
 
-    return TaskService.transition(session, task, target_status)
+    return await TaskService.transition(session, task, target_status)

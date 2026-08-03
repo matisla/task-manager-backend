@@ -1,13 +1,6 @@
-import logging
-from collections.abc import Generator
-from functools import lru_cache
-from typing import Annotated
-
-from config import Environment, get_settings
-from fastapi import Depends
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .settings import DatabaseUrl
 
@@ -28,4 +21,4 @@ def create_db_engine(database_url: DatabaseUrl):
 
 def create_session_factory(engine) -> async_sessionmaker[AsyncSession]:
     """factory used to generate session based on `engine`"""
-    return async_sessionmaker(engine, expire_on_commit=False)
+    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
