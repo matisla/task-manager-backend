@@ -4,11 +4,12 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
-from auth.repository import UserRepository
-from auth.security import create_token, decode_token
-from config import get_settings
 from httpx2 import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.auth.repository import UserRepository
+from app.auth.security import create_token, decode_token
+from app.core.config import get_settings
 
 from .factories import UserFactory
 
@@ -54,7 +55,6 @@ async def register(client: AsyncClient, **overrides) -> dict:
 
 
 class TestJWT:
-
     async def test_register(self, client: AsyncClient, session: AsyncSession):
 
         self.logger = logging.getLogger(__name__)

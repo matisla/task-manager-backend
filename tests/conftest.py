@@ -3,13 +3,14 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from auth.deps import get_current_user
-from auth.models import User
-from config import load_settings
-from db.session import create_db_engine, create_session_factory
 from httpx2 import ASGITransport, AsyncClient
-from main import create_app
 from sqlmodel import SQLModel
+
+from app.auth.deps import get_current_user
+from app.auth.models import User
+from app.core.config import load_settings
+from app.db.session import create_db_engine, create_session_factory
+from app.main import create_app
 
 from .auth.factories import UserFactory
 

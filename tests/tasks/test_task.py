@@ -10,7 +10,6 @@ from .factories import TaskFactory
 
 
 class TestTask:
-
     async def test_create_task(self, client: AsyncClient, session: AsyncSession):
         """
         Test the basic creation of a task

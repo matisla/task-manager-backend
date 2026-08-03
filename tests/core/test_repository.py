@@ -2,8 +2,9 @@ import uuid
 
 from pydantic import BaseModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-from tasks.models import Task
-from tasks.repository import TaskRepository
+
+from app.tasks.models import Task
+from app.tasks.repository import TaskRepository
 
 from ..tasks.factories import TaskFactory
 
@@ -19,7 +20,6 @@ class UnknownFieldFilter(BaseModel):
 
 
 class TestDefaultRepositoryList:
-
     async def test_list_ignores_unknown_filter_field(self, session: AsyncSession):
 
         owner_id = uuid.uuid4()

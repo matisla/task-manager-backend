@@ -2,7 +2,6 @@ from httpx2 import AsyncClient
 
 
 class TestHealth:
-
     async def test_health_returns_ok_without_authentication(self, auth_client: AsyncClient):
 
         response = await auth_client.get("/health")
