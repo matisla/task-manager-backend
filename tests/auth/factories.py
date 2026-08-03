@@ -1,6 +1,7 @@
 import factory
-from auth.models import User
 from faker import Faker
+
+from app.auth.models import User
 
 fake = Faker()
 

@@ -57,6 +57,16 @@ class Task(IDMixin, table=True):
     children: list[Task] = Relationship(back_populates="parent")
     user: User = Relationship(back_populates="tasks")
 
+    @model_validator(mode="after")
+    def check_task(self) -> "Task":
+        """validate the model after"""
+
+        if self.due_date is not None and self.start_date is not None:
+            if self.start_date > self.due_date:
+                raise ValueError("start date is after due date.")
+
+        return self
+
 
 class RoutineStatus(str, Enum):
     """

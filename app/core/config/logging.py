@@ -1,10 +1,8 @@
 import logging
-from enum import IntEnum
-from logging.config import dictConfig
-from pathlib import Path
+import sys
+from enum import IntEnum, StrEnum
 
 import structlog
-import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,14 +18,18 @@ class LogLevel(IntEnum):
     CRITICAL = logging.CRITICAL
 
 
+class LogFormat(StrEnum):
+    CONSOLE = "console"
+    JSON = "json"
+
+
 class LoggingSettings(BaseSettings):
     """
-    Logging simple settings
+    Logging settings: verbosity level for structlog's JSON output on stdout.
     """
 
     LEVEL: str = "INFO"
-    FORMAT: str = "%(asctime)s | %(levelname)-15s | %(filename)s - %(message)s"
-    CONFIG_FILE: str = Field(default="logging.yaml")
+    FORMAT: LogFormat = Field(default=LogFormat.CONSOLE)
 
     model_config = SettingsConfigDict(
         env_prefix="LOG_",
@@ -35,41 +37,35 @@ class LoggingSettings(BaseSettings):
         extra="ignore",
     )
 
-    def configure(self):
+    def configure(self) -> None:
         """
-        Configure the logging based on configuration.
+        Configure structlog to render one JSON object per line on stdout, filtered by `LEVEL`.
+
+        Backed by the standard library's logging module (a stdout-only handler with a
+        pass-through formatter), so that `add_logger_name` can report each logger's
+        dotted module name.
 
         Raises:
-            FileNotFoundError: if `CONFIG_FILE` does not exist or is not a file.
+            KeyError: if `LEVEL` is not one of DEBUG, INFO, WARNING, CRITICAL.
         """
 
-        filename = Path(self.CONFIG_FILE)
+        min_level = LogLevel[self.LEVEL.upper()]
 
-        if not filename.exists():
-            raise FileNotFoundError(f"'{self.CONFIG_FILE}' does not exist.")
-
-        if not filename.is_file():
-            raise FileNotFoundError(f"'{self.CONFIG_FILE}' is not a file.")
-
-        with open(filename, encoding="utf-8") as fn:
-            content = yaml.safe_load(fn.read())
-            dictConfig(content)
-
-        root_logger = logging.getLogger()
-        root_logger.setLevel(self.LEVEL)
-        root_logger.debug(f"Logging level set to {self.LEVEL}")
-
-    def configure_logging(self):
-        """
-        Initialize the logging for structlog
-        """
+        logging.basicConfig(format="%(message)s", stream=sys.stdout, level=min_level)
 
         structlog.configure(
+            wrapper_class=structlog.make_filtering_bound_logger(min_level),
             processors=[
                 structlog.contextvars.merge_contextvars,
                 structlog.stdlib.add_log_level,
                 structlog.stdlib.add_logger_name,
                 structlog.processors.TimeStamper(fmt="iso"),
-                structlog.processors.JSONRenderer(),
+                (
+                    structlog.processors.JSONRenderer()
+                    if self.FORMAT == LogFormat.JSON
+                    else structlog.dev.ConsoleRenderer(colors=True)
+                ),
             ],
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
         )

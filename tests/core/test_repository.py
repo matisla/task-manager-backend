@@ -5,8 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.tasks.models import Task
 from app.tasks.repository import TaskRepository
-
-from ..tasks.factories import TaskFactory
+from tests.tasks.factories import TaskFactory
 
 
 class UnknownFieldFilter(BaseModel):

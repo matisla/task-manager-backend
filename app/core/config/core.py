@@ -67,10 +67,9 @@ def get_settings(filename: str | Path | None = None) -> Settings:
     settings = Settings()
 
     settings.log.configure()
-    settings.log.configure_logging()
 
     logger = structlog.get_logger(__name__)
-    logger.debug("logging_configuration_completed", {"filename": filename or "default"})
+    logger.debug("logging_configuration_completed", filename=filename or "default")
 
     return settings
 

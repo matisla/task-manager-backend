@@ -1,3 +1,4 @@
+import sys
 from functools import cache
 from pathlib import Path
 
@@ -11,24 +12,25 @@ from app.auth.models import User
 from app.core.config import load_settings
 from app.db.session import create_db_engine, create_session_factory
 from app.main import create_app
-
-from .auth.factories import UserFactory
+from tests.auth.factories import UserFactory
 
 
 @cache
 def override_get_current_user() -> User:
     """Same fake user across requests, so ownership (eg. user_id) stays consistent."""
-
     return UserFactory.build()
 
 
 @pytest.fixture(scope="session")
 def current_user() -> User:
+    """return the current user"""
     return override_get_current_user()
 
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
+    """fixture used to generate the engine"""
+
     settings = load_settings(Path("tests/.env"))
     eng = create_db_engine(settings.db.connexion_url)
 
@@ -56,7 +58,7 @@ async def client(session_factory):
     Client with authentication overridden to a fixed fake user (see `current_user`).
     """
 
-    settings = load_settings(Path("tests/.env"))
+    settings = load_settings(Path(".env.test"))
     app = create_app(settings=settings)
 
     # Bypass the app's own lifespan (ASGITransport never triggers it); inject the
@@ -65,7 +67,12 @@ async def client(session_factory):
     app.dependency_overrides[get_current_user] = override_get_current_user
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as c:
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        follow_redirects=True,
+    ) as c:
         yield c
 
 
@@ -76,10 +83,15 @@ async def auth_client(session_factory):
     (login, refresh, and token verification on protected routes).
     """
 
-    settings = load_settings(Path("tests/.env"))
+    settings = load_settings(Path(".env.test"))
     app = create_app(settings=settings)
     app.state.session_factory = session_factory
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as c:
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        follow_redirects=True,
+    ) as c:
         yield c

@@ -47,6 +47,30 @@ class TaskService:
         return await TaskRepository(session).list(filters)
 
     @classmethod
+    async def get_owned_or_404(cls, session: AsyncSession, task_id: uuid.UUID, user: User) -> Task:
+        """
+        Retrieve a task by id, scoped to its owner.
+
+        Args:
+            session (AsyncSession): session used to access the database.
+            task_id (uuid.UUID): id of the task to retrieve.
+            user (User): the requesting user, expected to own the task.
+
+        Raises:
+            NotFoundError: 404 if the task does not exist or is not owned by the user.
+
+        Returns:
+            Task: the retrieved task.
+        """
+
+        task = await TaskRepository(session).get(task_id)
+
+        if task is None or task.user_id != user.id:
+            raise NotFoundError("Task not found")
+
+        return task
+
+    @classmethod
     async def create(cls, session: AsyncSession, data: TaskCreate, user: User) -> Task:
         """
         Create a new task owned by the given user.
@@ -70,64 +94,14 @@ class TaskService:
         )
 
     @classmethod
-    async def get_owned_or_404(cls, session: AsyncSession, task_id: uuid.UUID, user: User) -> Task:
-        """
-        Retrieve a task by id, scoped to its owner.
-
-        Args:
-            session (AsyncSession): session used to access the database.
-            task_id (uuid.UUID): id of the task to retrieve.
-            user (User): the requesting user, expected to own the task.
-
-        Raises:
-            NotFoundError: 404 if the task does not exist or is not owned by the user.
-
-        Returns:
-            Task: the retrieved task.
-        """
-
-        repository = TaskRepository(session)
-        task = await repository.get(task_id)
-
-        if task is None or task.user_id != user.id:
-            raise NotFoundError("Task not found")
-
-        return task
-
-    @classmethod
-    async def transition(cls, session: AsyncSession, task: Task, target: Status) -> Task:
-        """
-        Move a task to a new status, validated against ALLOWED_TRANSITIONS.
-
-        Args:
-            session (AsyncSession): session used to access the database.
-            task (Task): task to transition.
-            target (Status): the requested target status.
-
-        Raises:
-            ConflictError: 409 if the transition is not allowed from the current status.
-
-        Returns:
-            Task: the updated task.
-        """
-
-        if target not in ALLOWED_TRANSITIONS[task.status]:
-            raise ConflictError(f"Cannot transition task from {task.status} to {target}")
-
-        kwargs: dict = {"status": target}
-        if target == Status.DONE:
-            kwargs["completed_at"] = datetime.now(UTC)
-
-        return await TaskRepository(session).update(task, **kwargs)
-
-    @classmethod
     async def delete(cls, session: AsyncSession, task: Task) -> Task | None:
         """
         Apply the three-branch deletion rule.
 
+        Based on the current status of the task following action will be proceeded:
         - BACKLOG: physical delete, returns None.
         - DONE / CANCELLED: implicit transition to ARCHIVED, returns the task.
-        - ARCHIVED: idempotent no-op, returns the task unchanged (cf. Cas limites).
+        - ARCHIVED: idempotent no-op, returns the task unchanged.
         - any other status: raises ConflictError 409.
 
         Args:
@@ -154,3 +128,29 @@ class TaskService:
 
             case _:
                 raise ConflictError(f"Cannot delete task with status {task.status}")
+
+    @classmethod
+    async def transition(cls, session: AsyncSession, task: Task, target: Status) -> Task:
+        """
+        Move a task to a new status, validated against ALLOWED_TRANSITIONS.
+
+        Args:
+            session (AsyncSession): session used to access the database.
+            task (Task): task to transition.
+            target (Status): the requested target status.
+
+        Raises:
+            ConflictError: 409 if the transition is not allowed from the current status.
+
+        Returns:
+            Task: the updated task.
+        """
+
+        if target not in ALLOWED_TRANSITIONS[task.status]:
+            raise ConflictError(f"Cannot transition task from {task.status} to {target}")
+
+        kwargs: dict = {"status": target}
+        if target == Status.DONE:
+            kwargs["completed_at"] = datetime.now(UTC)
+
+        return await TaskRepository(session).update(task, **kwargs)

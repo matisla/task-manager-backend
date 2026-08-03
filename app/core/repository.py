@@ -51,7 +51,9 @@ class DefaultRepository[ModelType: SQLModel]:
         statement = select(self.model)
 
         if filters is not None:
+
             for field, value in filters.model_dump(exclude_none=True).items():
+
                 column = getattr(self.model, field, None)
                 if column is not None:
                     statement = statement.where(column == value)

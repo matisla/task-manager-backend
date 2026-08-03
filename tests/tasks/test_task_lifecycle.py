@@ -1,12 +1,13 @@
-import logging
 import uuid
 
 import pytest
-from auth.models import User
+import structlog
 from httpx2 import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
-from tasks.models import Status, Task
-from tasks.services import ALLOWED_TRANSITIONS
+
+from app.auth.models import User
+from app.tasks.models import Status, Task
+from app.tasks.services import ALLOWED_TRANSITIONS
 
 from .factories import TaskFactory
 
@@ -26,11 +27,15 @@ INVALID_TRANSITIONS = [
 
 
 class TestTaskLifecycle:
+
     async def _create_task(
         self, session: AsyncSession, user_id: uuid.UUID, status: Status = Status.BACKLOG
     ) -> Task:
+
         task = TaskFactory.create(user_id=user_id, status=status)
+
         session.add(task)
+
         await session.commit()
         await session.refresh(task)
         return task
@@ -48,7 +53,7 @@ class TestTaskLifecycle:
         Every edge declared in ALLOWED_TRANSITIONS should be accepted and return the new status.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=source)
 
@@ -69,7 +74,7 @@ class TestTaskLifecycle:
         Transitions absent from ALLOWED_TRANSITIONS (including X -> X) should be rejected.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=source)
 
@@ -83,7 +88,7 @@ class TestTaskLifecycle:
         IN_PROGRESS -> DONE should set completed_at.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=Status.IN_PROGRESS)
         task_id = task.id
@@ -103,7 +108,7 @@ class TestTaskLifecycle:
         Any transition other than X -> DONE should leave completed_at untouched (None).
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=Status.BACKLOG)
         task_id = task.id
@@ -128,7 +133,7 @@ class TestTaskLifecycle:
         No transition, explicit or implicit, should set updated_at (cf. Non-objectifs).
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=source)
 
@@ -143,7 +148,7 @@ class TestTaskLifecycle:
         DELETE on a BACKLOG task removes the row.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=Status.BACKLOG)
         task_id = task.id
@@ -162,7 +167,7 @@ class TestTaskLifecycle:
         DELETE on a DONE/CANCELLED task is an implicit archiving, the row persists.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=source)
         task_id = task.id
@@ -182,7 +187,7 @@ class TestTaskLifecycle:
         DELETE on an already ARCHIVED task is a no-op returning 204.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=Status.ARCHIVED)
         task_id = task.id
@@ -206,7 +211,7 @@ class TestTaskLifecycle:
         DELETE on a task in any other status is rejected with 409, no change in database.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, current_user.id, status=source)
         task_id = task.id
@@ -226,7 +231,7 @@ class TestTaskLifecycle:
         GET on a task owned by another user returns 404.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
@@ -240,7 +245,7 @@ class TestTaskLifecycle:
         DELETE on a task owned by another user returns 404.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
@@ -254,7 +259,7 @@ class TestTaskLifecycle:
         POST .../{status} on a task owned by another user returns 404.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         task = await self._create_task(session, uuid.uuid4(), status=Status.BACKLOG)
 
@@ -266,7 +271,7 @@ class TestTaskLifecycle:
         GET on a non-existent task id returns 404.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
 
         response = await client.get(f"/api/tasks/{uuid.uuid4()}")
         assert response.status_code == 404

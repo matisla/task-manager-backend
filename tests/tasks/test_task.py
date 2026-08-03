@@ -1,10 +1,11 @@
 import logging
 import uuid
 
-from auth.models import User
 from httpx2 import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
-from tasks.models import Task
+
+from app.auth.models import User
+from app.tasks.models import Task
 
 from .factories import TaskFactory
 

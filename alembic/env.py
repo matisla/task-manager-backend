@@ -12,10 +12,10 @@ from alembic import context
 # way the application itself imports them (eg. "auth.models").
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
-import database  # noqa: F401  (applies the naming convention to SQLModel.metadata)
-from auth import models as auth_models  # noqa: F401
-from config import get_settings
-from tasks import models as tasks_models  # noqa: F401
+import app.db.settings  # noqa: F401
+from app.auth import models as auth_models  # noqa: F401
+from app.core.config import get_settings
+from app.tasks import models as tasks_models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

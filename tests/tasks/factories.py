@@ -1,6 +1,7 @@
 import factory
 from faker import Faker
-from tasks.models import Task
+
+from app.tasks.models import Task
 
 fake = Faker()
 

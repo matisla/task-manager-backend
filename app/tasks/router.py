@@ -1,7 +1,7 @@
-import logging
 import uuid
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, Form, Query, Response, status
 
 from app.auth.deps import currentUserDep
@@ -12,6 +12,7 @@ from .models import Status
 from .schemas import TaskCreate, TaskRead
 from .services import TaskService
 
+logger = structlog.get_logger(__name__)
 tasks_router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
@@ -22,8 +23,7 @@ async def list_tasks(
     session: SessionDep,
 ):
     """
-    Endpoint compatible OpenAPI / Swagger UI.
-    List all tasks of the user, optionally filtered by status/parent_id.
+    List all tasks of the user, and filter them if based on given `filters`.
 
     Args:
         filters (TaskFilter): equality filters requested by the client.
@@ -48,8 +48,7 @@ async def create_task(
     session: SessionDep,
 ):
     """
-    Endpoint compatible OpenAPI / Swagger UI.
-    Create a new task.
+    Create a new task based on given `data`.
 
     Args:
         data (TaskCreate): data to use to create the task.
@@ -60,10 +59,11 @@ async def create_task(
         TaskRead: the created task.
     """
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Try to create a new task: {data}")
+    logger.debug("task_create", data=data)
 
-    return await TaskService.create(session, data, user)
+    task = await TaskService.create(session, data, user)
+
+    return task
 
 
 @tasks_router.get(
@@ -72,8 +72,7 @@ async def create_task(
 )
 async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: SessionDep):
     """
-    Endpoint compatible OpenAPI / Swagger UI.
-    Get detail of a task.
+    Get by id detail of a task.
 
     Args:
         task_id (uuid.UUID): id of the task to retrieve.
@@ -84,8 +83,7 @@ async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: Session
         TaskRead: the requested task.
     """
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Try to get task: {task_id}")
+    logger.debug("task_get", id=task_id)
 
     task = await TaskService.get_owned_or_404(session, task_id, user)
 
@@ -98,10 +96,7 @@ async def detail_task(task_id: uuid.UUID, user: currentUserDep, session: Session
 )
 async def delete_task(task_id: uuid.UUID, user: currentUserDep, session: SessionDep):
     """
-    Endpoint compatible OpenAPI / Swagger UI.
-    Delete a task, following the three-branch deletion rule (see TaskService.delete):
-    physical delete for BACKLOG, implicit archiving for DONE/CANCELLED, idempotent for
-    ARCHIVED, 409 otherwise.
+    Delete a task by his id.
 
     Args:
         task_id (uuid.UUID): id of the task to delete.
@@ -112,8 +107,7 @@ async def delete_task(task_id: uuid.UUID, user: currentUserDep, session: Session
         Response: an empty 204 response.
     """
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Try to delete a task: {task_id}")
+    logger.debug("task_delete", id=task_id)
 
     task = await TaskService.get_owned_or_404(session, task_id, user)
     await TaskService.delete(session, task)
@@ -132,7 +126,6 @@ async def transition_task(
     session: SessionDep,
 ):
     """
-    Endpoint compatible OpenAPI / Swagger UI.
     Move a task to a new status, validated against the allowed transitions graph.
 
     Args:
@@ -145,9 +138,9 @@ async def transition_task(
         TaskRead: the updated task.
     """
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"Try to transition task {task_id} to {target_status}")
+    logger.debug("task_change_status", id=task_id, target_status=target_status)
 
     task = await TaskService.get_owned_or_404(session, task_id, user)
+    task = await TaskService.transition(session, task, target_status)
 
-    return await TaskService.transition(session, task, target_status)
+    return task
