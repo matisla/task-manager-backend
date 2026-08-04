@@ -19,7 +19,7 @@ htmlcov/
 tests/database.db
 
 # Environment variables
-.env
+.env*
 
 # logs
 **/*.log
