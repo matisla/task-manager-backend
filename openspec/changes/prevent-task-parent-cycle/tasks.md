@@ -3,9 +3,9 @@ Pas de migration Alembic nécessaire : `parent_id` existe déjà comme colonne s
 
 ## 1. Schéma
 
-- [ ] 1.1 Ajouter `TaskUpdate` à `app/tasks/schemas.py` avec un seul champ pour l'instant,
-      `parent_id: uuid.UUID | None` — schéma destiné à être étendu par la future spec d'édition de
-      contenu (`title`, `description`, `due_date`), pas renommé à ce moment-là.
+- [ ] 1.1 Ajouter `TaskParentUpdate` à `app/tasks/schemas.py` avec un seul champ,
+      `parent_id: uuid.UUID | None = None` — champ omis dans le formulaire ou envoyé vide →
+      effacement du parent, champ fourni → affectation.
 
 ## 2. Service
 
@@ -32,10 +32,10 @@ Pas de migration Alembic nécessaire : `parent_id` existe déjà comme colonne s
 
 ## 3. Router
 
-- [ ] 3.1 Ajouter `PATCH /tasks/{task_id}` à `app/tasks/router.py` : résout la tâche via
-      `TaskService.get_owned_or_404`, puis, si `parent_id` est présent dans le payload, appelle
-      `TaskService.reparent` avant tout autre traitement (aucun autre champ pour l'instant, cf.
-      design.md - Ordre de traitement), retourne `TaskRead`.
+- [ ] 3.1 Ajouter `POST /tasks/{task_id}/parent` à `app/tasks/router.py`, corps
+      `Annotated[TaskParentUpdate, Form()]` (même convention que `create_task`) : résout la tâche
+      via `TaskService.get_owned_or_404`, appelle `TaskService.reparent(session, task,
+      data.parent_id)`, retourne `TaskRead`.
 
 ## 4. Tests
 
@@ -43,7 +43,8 @@ Dans `tests/tasks/`, en utilisant `TaskFactory` et les fixtures existantes (`cli
 `current_user`) :
 
 - [ ] 4.1 Reparenter une tâche vers une tâche existante non liée → `200`, `parent_id` mis à jour.
-- [ ] 4.2 Effacer le parent d'une tâche (`parent_id: null`) → `200`, `parent_id` vaut `None`.
+- [ ] 4.2 Effacer le parent d'une tâche (`parent_id` omis du formulaire) → `200`, `parent_id`
+      vaut `None`.
 - [ ] 4.3 Reparenter une tâche vers son parent actuel → `200`, pas d'erreur, `parent_id`
       inchangé.
 - [ ] 4.4 Définir une tâche comme son propre parent → `409`, `parent_id` inchangé.
@@ -52,9 +53,12 @@ Dans `tests/tasks/`, en utilisant `TaskFactory` et les fixtures existantes (`cli
 - [ ] 4.6 Définir le parent d'une tâche comme un descendant à plusieurs niveaux (petit-enfant ou
       plus loin) → `409`, `parent_id` inchangé.
 - [ ] 4.7 Définir le parent d'un ancêtre X comme un descendant D d'une tâche A située plus bas
-      dans la même branche (X → ... → A → ... → D, avec X ≠ A) → `409`, `parent_id` de X
-      inchangé — vérifie que le contrôle porte sur toute la descendance et pas seulement sur la
-      tâche directement reparentée.
+      dans la même branche (X → A → B → D, avec X ≠ A) → `409`, `parent_id` de X inchangé. Ce
+      test documente explicitement le contrat « toute la descendance » (cf. spec.md, scénario
+      « Un descendant ne peut pas devenir le parent d'un ancêtre ») — il exerce le même chemin de
+      code que 4.6 (même fonction `reparent`, même boucle de parcours, juste une profondeur
+      différente), ce n'est pas une couverture de code supplémentaire, mais une garantie du
+      contrat qu'on ne veut pas voir supprimer par erreur en la croyant redondante.
 - [ ] 4.8 Reparenter une tâche qui n'existe pas, ou qui n'appartient pas à l'utilisateur
       demandeur → `404`.
 - [ ] 4.9 Reparenter vers un parent cible qui n'existe pas, ou qui n'appartient pas à

@@ -19,9 +19,10 @@ contrat de comportement exact.
 - Définir la forme requête/réponse du nouvel endpoint.
 
 **Non-objectifs :**
-- L'édition générale du contenu des tâches (`title`, `description`, `due_date` via le même
+- L'édition générale du contenu des tâches (`title`, `description`, `due_date` via un futur
   `PATCH /tasks/{id}`) et le marqueur « detached » qu'elle poserait — spec future séparée, selon
-  la proposition. Ce changement-ci pose l'endpoint et n'y câble que `parent_id`.
+  la proposition. Ce changement-ci introduit un endpoint dédié au reparentage
+  (`POST /tasks/{id}/parent`), indépendant de ce futur endpoint.
 - L'optimisation du parcours pour des hiérarchies très profondes (des centaines de niveaux) —
   hors périmètre étant donné l'usage attendu (hiérarchies de tâches personnelles, une poignée de
   niveaux tout au plus).
@@ -81,23 +82,16 @@ cible via le `get_owned_or_404` existant, puis effectue le parcours d'ancêtres,
 
 ### Endpoint et schéma
 
-- `PATCH /tasks/{task_id}`, corps `{"parent_id": uuid.UUID | None}` — un nouveau schéma
-  `TaskUpdate` dans `app/tasks/schemas.py`. C'est le schéma qui portera aussi les futurs champs de
-  contenu (`title`, `description`, `due_date`) lorsque cette spec-là sera implémentée ; il n'expose
-  pour l'instant que `parent_id`, pour éviter d'avoir à renommer le schéma ou l'endpoint à ce
-  moment-là.
+- `POST /tasks/{task_id}/parent`, corps `Form()` — un nouveau schéma `TaskParentUpdate` dans
+  `app/tasks/schemas.py` avec un seul champ, `parent_id: uuid.UUID | None = None`. Endpoint dédié
+  (pas de partage avec le futur `PATCH /tasks/{id}` d'édition de contenu), à la manière de
+  `POST /tasks/{id}/{status}` déjà en place pour les transitions de statut — cohérent avec la
+  convention `Form()` du router.
+- Le défaut `None` sur `parent_id` couvre à la fois « champ omis » et « champ explicitement remis
+  à vide » de façon indifférenciée, ce qui est correct ici : l'endpoint n'a qu'un seul objet
+  (fixer ou effacer le parent), il n'y a jamais de troisième état « ne pas toucher ce champ » à
+  distinguer, contrairement à une mise à jour partielle multi-champs.
 - Réutilise `TaskRead` comme modèle de réponse, comme pour l'endpoint de transition.
-
-### Ordre de traitement des champs dans `PATCH /tasks/{task_id}`
-
-Le reparentage (validation du cycle incluse) est traité avant tout autre champ du payload. Pour ce
-changement-ci, `parent_id` est le seul champ existant donc l'ordre n'a pas d'effet observable —
-mais il est fixé maintenant pour que la future spec d'édition de contenu n'ait pas à revenir sur
-cette décision : quand `title`/`description`/`due_date` rejoindront le même payload, un
-reparentage invalide (cycle, self-parent) devra rejeter la requête entière (`409`) avant que les
-autres champs ne soient appliqués, plutôt que d'appliquer partiellement les changements. Le
-handler du router (ou `TaskService`) appelle donc `reparent` en premier lorsque `parent_id` est
-présent dans le payload, avant tout traitement des autres champs.
 
 ## Risques / Compromis
 
@@ -114,8 +108,17 @@ présent dans le payload, avant tout traitement des autres champs.
   changement, mais à noter pour une itération future : exposer cette limite comme un paramètre de
   `settings` (`pydantic-settings`) plutôt qu'une constante en dur, si le besoin de l'ajuster
   apparaît.
-- **[Compromis]** Réutiliser `PATCH /tasks/{id}` maintenant, avant que la spec d'édition de
-  contenu n'existe, signifie que le schéma `TaskUpdate` et le comportement de l'endpoint devront
-  être étendus (pas recréés) par cette future spec → accepté pour éviter qu'un second endpoint de
-  mutation de contenu (`PATCH /tasks/{id}/parent` distinct) ne coexiste inutilement avec le futur
-  endpoint général une fois celui-ci livré.
+- **[Risque]** Le parcours anti-cycle lit l'état de la hiérarchie au moment de la requête, sans
+  verrou : deux reparentages concurrents sur des branches qui s'entrecroisent (ex. `A → parent B`
+  et `B → parent A` soumis quasi simultanément) pourraient chacun passer la validation avant que
+  l'autre ne committe, et introduire un cycle à deux une fois les deux commits appliqués →
+  **Mitigation** : acceptée sans mécanisme dédié, vu l'usage attendu (un utilisateur, un client à
+  la fois, actions issues d'une UI séquentielle) qui rend la fenêtre de course étroite ; à revoir
+  (verrouillage `SELECT ... FOR UPDATE`, ou isolation `SERIALIZABLE`) si un usage multi-client
+  concurrent sur la même hiérarchie apparaît.
+- **[Compromis]** Un endpoint dédié `POST /tasks/{id}/parent` (plutôt que d'intégrer ceci dans un
+  futur `PATCH /tasks/{id}` général) signifie que deux endpoints de mutation de tâche existeront
+  une fois le `PATCH` général livré → accepté pour éviter de bloquer ce changement sur une spec
+  d'édition de contenu non planifiée, et pour éviter l'ambiguïté d'encodage `Form()`/JSON qu'un
+  endpoint partagé aurait introduite sur l'effacement de `parent_id` (voir proposal.md - À
+  Clarifier, point résolu).

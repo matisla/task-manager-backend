@@ -14,15 +14,14 @@ du code mort, sans chemin atteignable pour l'exercer de bout en bout.
 
 ## Ce qui change
 
-- Ajout de `PATCH /tasks/{id}` pour changer (ou effacer) le `parent_id` d'une tâche après sa
-  création. C'est le même endpoint que celui envisagé pour la future édition générale de contenu
-  (`title`, `description`, `due_date`, ...) déjà signalée dans
-  `docs/specs/01-task-status-lifecycle.md`, mais ce changement-ci ne câble que le champ
-  `parent_id` — les champs de contenu et le marqueur « detached » qu'ils déclenchent restent hors
-  périmètre et seront ajoutés au même endpoint par une future spec. Quand le payload contiendra à
-  la fois `parent_id` et des champs de contenu, le reparentage sera traité en premier (avant tout
-  autre champ) : une tentative de cycle rejette la requête entière avant que d'autres champs ne
-  soient appliqués.
+- Ajout de `POST /tasks/{id}/parent` pour changer (ou effacer) le `parent_id` d'une tâche après sa
+  création. Endpoint dédié, à la manière de `POST /tasks/{id}/{status}` déjà en place pour les
+  transitions de statut — cohérent avec la convention `Form()` du router
+  (`app/tasks/router.py`) et sans ambiguïté d'encodage : `parent_id: uuid.UUID | None = None`,
+  champ omis dans le formulaire → effacement du parent, champ fourni → affectation. La future
+  édition générale de contenu (`title`, `description`, `due_date`, et le marqueur « detached »
+  qu'elle poserait), déjà signalée dans `docs/specs/01-task-status-lifecycle.md`, reste un
+  `PATCH /tasks/{id}` entièrement séparé, non entamé par ce changement.
 - Ajout de la validation anti-cycle dans `TaskService`, appliquée à chaque affectation de parent :
   - une tâche ne peut pas être définie comme son propre parent.
   - plus généralement : ni la tâche, ni les enfants de la tâche, ne peuvent apparaître comme étant
@@ -66,45 +65,22 @@ tâches._
 ## Impact
 
 - **Code** : `app/tasks/services.py` (nouvelle validation + logique de reparentage dans
-  `TaskService`), `app/tasks/router.py` (nouvel endpoint `PATCH /tasks/{id}`),
-  `app/tasks/schemas.py` (schéma de requête pour le nouvel endpoint, limité à `parent_id` pour
-  l'instant mais destiné à être étendu par la future spec d'édition de contenu),
+  `TaskService`), `app/tasks/router.py` (nouvel endpoint `POST /tasks/{id}/parent`),
+  `app/tasks/schemas.py` (schéma de requête dédié pour le nouvel endpoint),
   `app/tasks/repository.py` (requête pour parcourir la chaîne parent/descendant, si non
   réalisable avec les relations déjà chargées).
-- **API** : additif — nouvel endpoint `PATCH /tasks/{id}`, aucun changement sur les endpoints
-  existants. Cet endpoint sera réutilisé (et étendu) par la future spec d'édition de contenu
-  plutôt que d'en créer un second.
+- **API** : additif — nouvel endpoint `POST /tasks/{id}/parent`, aucun changement sur les
+  endpoints existants. Indépendant du futur `PATCH /tasks/{id}` d'édition de contenu, qui restera
+  un endpoint séparé.
 - **Performance** : la validation anti-cycle nécessite de parcourir la chaîne d'ancêtres du
   parent candidat (ou l'arbre des descendants de la tâche déplacée) à chaque appel de
   reparentage ; la profondeur est bornée par le niveau d'imbrication réel des tâches des
   utilisateurs, censé rester faible, mais la stratégie de parcours (requête récursive vs.
   parcours itératif en Python) est une décision de conception.
-- **Prépare** la future spec générale d'édition de contenu (title/description/due_date et le
-  marqueur « detached ») sans l'anticiper : elle réutilisera le même `PATCH /tasks/{id}` et le
-  même schéma `TaskUpdate` en y ajoutant des champs, plutôt que de créer son propre endpoint.
 - **Migration** : aucune migration Alembic n'est nécessaire. `parent_id` existe déjà comme colonne
   sur `Task` (`app/tasks/models.py`) ; ce changement ne modifie pas `models.py`.
 
 ## À Clarifier
 
-Points relevés en revue, non tranchés par les décisions ci-dessus :
-
-- **Encodage du payload de `PATCH /tasks/{id}`** : JSON ou `Form()` (convention actuelle de
-  `create_task`, cf. `app/tasks/router.py`) ? Le choix conditionne comment un client peut effacer
-  `parent_id` (valeur `null` explicite) — un formulaire encodé (`application/x-www-form-urlencoded`)
-  n'a pas de représentation native pour un `null` sur un champ `UUID`, ce qui est pourtant le
-  scénario « Effacer le parent d'une tâche » de `specs/task-reparenting/spec.md`.
-- **Cardinalité de `parent_id` dans `TaskUpdate`** : champ obligatoire pour l'instant (pas de
-  valeur par défaut). À réévaluer quand la future édition de contenu ajoutera des champs
-  optionnels au même schéma, pour distinguer « champ absent du payload » de « champ explicitement
-  remis à `null` » (problème classique des mises à jour partielles).
-- **Concurrence (TOCTOU)** : le parcours de la chaîne d'ancêtres lit l'état de la hiérarchie au
-  moment de la requête, sans verrou. Deux reparentages concurrents sur des branches qui
-  s'entrecroisent pourraient chacun passer la validation avant que l'autre ne committe, et
-  introduire un cycle à deux. Probablement acceptable vu l'usage mono-utilisateur attendu, mais
-  non tranché explicitement.
-- **Couverture du test « ancêtre / descendant d'un tiers »** (tasks.md 4.7) : exerce le même
-  chemin de code que le test « descendant multi-niveaux » (4.6), l'algorithme ne faisant aucune
-  distinction entre « la tâche directement reparentée » et un nœud plus loin dans la hiérarchie —
-  utile comme documentation vivante du contrat, mais n'ajoute pas de couverture de code
-  supplémentaire.
+_Aucun point restant — tous les points relevés en revue ont été tranchés (voir historique des
+décisions dans `design.md`)._
