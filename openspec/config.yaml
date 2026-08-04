@@ -1,0 +1,43 @@
+schema: spec-driven
+context: |
+  Tech stack:
+    - **Langage** : Python 3.14
+    - **Framework** : FastAPI
+    - **Serveur ASGI** : Uvicorn
+    - **Gestion des dépendances** : uv
+    - **Base de données** : Postgres
+    - **ORM / Driver** : SQLModel
+    - **Migrations** : Alembic
+    - **Validation** : Pydantic
+    - **Gestion des paramètres** : Pydantic Settings
+    - **Authentification** : JWT (access / refresh token), hash de mot de passe Argon2 (`pwdlib`)
+    - **Logs** : [structlog](https://www.structlog.org/), un objet JSON par ligne sur stdout
+    - **Linter / Formatter** : ruff
+    - **Vérification de types** : pyright
+    - **Tests** : pytest, factory_boy, Faker, httpx
+
+  Language:
+    use defined languages for following elements:  
+    - source code and source code comment: English (en-US)
+    - user interaction: French (fr-FR)
+    - technical terms, (like: "API"): English (en-US)
+    - artifacts: French (fr-FR)
+
+  Quality principles:
+    - Robustness: explicit input validation, no silent failure, 
+      explicit error handling, with meaningful HTTP status codes and error payload.
+    - Maintenability: follow the DRY princip, single responsability per module with clear  
+      separation: router, service, repository, model, schema, full type hints (pyright strict-frendly),  
+      documented model.
+    - Scalability: usage of async (no blocking calls in async paths), stateless request handling, and more.
+    - Production-Ready: the code produced shall be ready for production without big changes in the code base.
+
+rules:
+  spec:
+    - Use Given/When/Then scenarios.
+
+operations:
+  apply:
+    guidance:
+      - all new or changed functions and classes shall have an up-to-date docstring.
+      - all attributes shall have a type hint, except `self`, `cls`.
