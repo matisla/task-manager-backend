@@ -20,6 +20,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY ./env/logging.yaml ./logging.yaml
 
+# in case we use the builder for run (DEV mode)
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 # --- Stage Runner ---
 
 FROM python:3.14-slim AS runtime
