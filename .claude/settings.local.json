@@ -7,6 +7,7 @@
       "Bash(uvx isort *)",
       "Bash(docker compose *)",
       "Bash(uv export *)",
+      "Bash(git *)",
       "Edit(docs/brainstorms/*.md)",
       "Edit(docs/specs/*.md)",
     ]

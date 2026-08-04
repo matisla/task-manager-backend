@@ -1,4 +1,3 @@
-
 # CLAUDE.md
 
 Ce fichier fournit des instructions pour Claude Code (claude.ai/code) lorsqu'il travaille sur ce dépôt.
@@ -8,6 +7,7 @@ Ce fichier fournit des instructions pour Claude Code (claude.ai/code) lorsqu'il 
 - Le code et commentaires devront par convention toujours être données anglais.
 - Les interactions et réponses destinées à l'humain et non présent dans le dépôt, toujours en français. 
 - Les noms de variables, fonctions, classes, fichiers suivent les conventions Python standard et doivent être en anglais. 
+- La spec devra être en français.
 
 # Présentation du projet
 
